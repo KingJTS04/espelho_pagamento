@@ -2,6 +2,7 @@
 import os
 import uuid
 import json
+
 from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash
 from werkzeug.utils import secure_filename
 
@@ -29,6 +30,14 @@ os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "troque-essa-chave-em-producao")
+
+# (Opcional)
+app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB
+
+# =========================
+# 🔒 SENHA FIXA (ALTERE AQUI)
+# =========================
+APP_PASSWORD = "espelho2026"
 
 
 # =========================
@@ -94,17 +103,51 @@ def require_uploaded_files(state: dict):
         raise FileNotFoundError("Arquivos enviados não encontrados no workspace.")
 
 
+def is_logged_in() -> bool:
+    return session.get("auth_ok") is True
+
+
+# =========================
+# 🔒 LOGIN ROUTES
+# =========================
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        pwd = request.form.get("password", "").strip()
+        if pwd == APP_PASSWORD:
+            session["auth_ok"] = True
+            flash("Acesso liberado ✅", "ok")
+            return redirect(url_for("index"))
+        flash("Senha incorreta.", "error")
+        return redirect(url_for("login"))
+
+    return render_template("login.html")
+
+
+@app.route("/logout", methods=["GET"])
+def logout():
+    session.clear()
+    flash("Você saiu.", "ok")
+    return redirect(url_for("login"))
+
+
 # =========================
 # ROUTES
 # =========================
 @app.route("/", methods=["GET"])
 def index():
+    if not is_logged_in():
+        return redirect(url_for("login"))
+
     state = load_state()
     return render_template("index.html", state=state)
 
 
 @app.route("/upload", methods=["POST"])
 def upload():
+    if not is_logged_in():
+        return redirect(url_for("login"))
+
     state = load_state()
     ws = _ws_dir()
 
@@ -151,6 +194,9 @@ def upload():
 
 @app.route("/step1", methods=["POST"])
 def step1():
+    if not is_logged_in():
+        return redirect(url_for("login"))
+
     state = load_state()
     try:
         require_uploaded_files(state)
@@ -178,6 +224,9 @@ def step1():
 
 @app.route("/step2", methods=["POST"])
 def step2():
+    if not is_logged_in():
+        return redirect(url_for("login"))
+
     state = load_state()
     try:
         if not state.get("step1_done"):
@@ -209,6 +258,9 @@ def step2():
 
 @app.route("/step3", methods=["POST"])
 def step3():
+    if not is_logged_in():
+        return redirect(url_for("login"))
+
     state = load_state()
     try:
         if not state.get("step2_done"):
@@ -224,13 +276,12 @@ def step3():
         if not banco_path or not os.path.exists(banco_path):
             raise FileNotFoundError("banco_consolidado.xlsx não encontrado.")
 
-        # Gera dentro do próprio arquivo espelhos
         gerar_resumos(espelhos_xlsx_path=espelhos_path, banco_consolidado_xlsx_path=banco_path)
 
-        # Copia/expõe como final para download
         final_path = os.path.join(dl, "Espelhos_Motoristas_FINAL.xlsx")
         if os.path.exists(final_path):
             os.remove(final_path)
+
         with open(espelhos_path, "rb") as src, open(final_path, "wb") as dst:
             dst.write(src.read())
 
@@ -247,8 +298,12 @@ def step3():
 
 @app.route("/download", methods=["GET"])
 def download():
+    if not is_logged_in():
+        return redirect(url_for("login"))
+
     state = load_state()
     final_path = state.get("files", {}).get("final")
+
     if not state.get("step3_done") or not final_path or not os.path.exists(final_path):
         flash("Arquivo final ainda não está pronto.", "error")
         return redirect(url_for("index"))
@@ -257,4 +312,4 @@ def download():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000)

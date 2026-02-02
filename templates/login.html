@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login - Espelho Pagamento</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;margin:24px;max-width:520px}
+    .card{border:1px solid #ddd;border-radius:10px;padding:18px}
+    .btn{padding:10px 14px;border-radius:8px;border:1px solid #333;background:#fff;cursor:pointer}
+    input{width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;margin:10px 0}
+    .ok{color:#0a7a2f}
+    .err{color:#b00020}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>🔒 Acesso restrito</h2>
+    <p>Digite a senha para acessar o sistema.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul>
+          {% for category, msg in messages %}
+            <li class="{{ 'ok' if category=='ok' else 'err' }}">{{ msg }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('login') }}" method="post">
+      <input type="password" name="password" placeholder="Senha" required />
+      <button class="btn" type="submit">Entrar</button>
+    </form>
+  </div>
+</body>
+</html>
