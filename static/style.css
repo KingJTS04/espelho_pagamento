@@ -303,29 +303,3 @@ input[type="file"]:focus{
   font-size: 12px;
   color: rgba(15, 23, 42, 0.65);
 }
-input[type="password"], input[type="text"]{
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: var(--r-md);
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,0.96);
-  outline: none;
-}
-
-input[type="password"]:focus, input[type="text"]:focus{
-  border-color: rgba(1, 72, 144, 0.40);
-  box-shadow: 0 0 0 4px rgba(1, 72, 144, 0.14);
-}
-input[type="password"], input[type="text"]{
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: var(--r-md);
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,0.96);
-  outline: none;
-}
-
-input[type="password"]:focus, input[type="text"]:focus{
-  border-color: rgba(1, 72, 144, 0.40);
-  box-shadow: 0 0 0 4px rgba(1, 72, 144, 0.14);
-}
