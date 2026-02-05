@@ -16,7 +16,6 @@ from core.step3_resumos import gerar_resumos
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 STORAGE_DIR = os.path.join(BASE_DIR, "storage")
-UPLOADS_DIR = os.path.join(STORAGE_DIR, "uploads")
 WORKSPACES_DIR = os.path.join(STORAGE_DIR, "workspaces")
 DOWNLOADS_DIR = os.path.join(STORAGE_DIR, "downloads")
 
@@ -24,27 +23,24 @@ MODELO_PATH = os.path.join(BASE_DIR, "modelo", "modelo.xlsx")
 
 ALLOWED_EXTENSIONS = {".xlsx"}
 
-os.makedirs(UPLOADS_DIR, exist_ok=True)
 os.makedirs(WORKSPACES_DIR, exist_ok=True)
 os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "troque-essa-chave-em-producao")
-
-# (Opcional)
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB
 
 # =========================
 # 🔒 SENHA FIXA (ALTERE AQUI)
 # =========================
-APP_PASSWORD = "espelho2026"
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "espelho2026")
 
 
 # =========================
 # HELPERS
 # =========================
 def _ext_ok(filename: str) -> bool:
-    _, ext = os.path.splitext(filename.lower())
+    _, ext = os.path.splitext((filename or "").lower())
     return ext in ALLOWED_EXTENSIONS
 
 
@@ -113,7 +109,7 @@ def is_logged_in() -> bool:
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        pwd = request.form.get("password", "").strip()
+        pwd = (request.form.get("password", "") or "").strip()
         if pwd == APP_PASSWORD:
             session["auth_ok"] = True
             flash("Acesso liberado ✅", "ok")
@@ -158,7 +154,7 @@ def upload():
         flash("Envie os dois arquivos (motoristas e fechamento).", "error")
         return redirect(url_for("index"))
 
-    if motoristas_file.filename == "" or fechamento_file.filename == "":
+    if (motoristas_file.filename or "") == "" or (fechamento_file.filename or "") == "":
         flash("Nome de arquivo inválido.", "error")
         return redirect(url_for("index"))
 
@@ -203,10 +199,12 @@ def step1():
         ws = _ws_dir()
 
         banco_path = os.path.join(ws, "banco_consolidado.xlsx")
+
+        # ✅ CHAMADA POR POSIÇÃO (evita erro de keyword no Render)
         gerar_banco_consolidado(
-            motoristas_xlsx_path=state["files"]["motoristas"],
-            fechamento_xlsx_path=state["files"]["fechamento"],
-            saida_xlsx_path=banco_path,
+            state["files"]["motoristas"],
+            state["files"]["fechamento"],
+            banco_path,
         )
 
         state["files"]["banco"] = banco_path
@@ -231,17 +229,22 @@ def step2():
     try:
         if not state.get("step1_done"):
             raise ValueError("Faça o passo 1 antes.")
-        ws = _ws_dir()
 
         banco_path = state["files"].get("banco")
         if not banco_path or not os.path.exists(banco_path):
             raise FileNotFoundError("banco_consolidado.xlsx não encontrado.")
 
+        if not os.path.exists(MODELO_PATH):
+            raise FileNotFoundError(f"Modelo não encontrado em: {MODELO_PATH}")
+
+        ws = _ws_dir()
         espelhos_path = os.path.join(ws, "Espelhos_Motoristas.xlsx")
+
+        # ✅ CHAMADA POR POSIÇÃO (evita mismatch de nomes)
         gerar_espelhos_motoristas(
-            banco_consolidado_xlsx_path=banco_path,
-            modelo_xlsx_path=MODELO_PATH,
-            saida_espelhos_xlsx_path=espelhos_path,
+            banco_path,
+            MODELO_PATH,
+            espelhos_path,
         )
 
         state["files"]["espelhos"] = espelhos_path
@@ -265,8 +268,6 @@ def step3():
     try:
         if not state.get("step2_done"):
             raise ValueError("Faça o passo 2 antes.")
-        ws = _ws_dir()
-        dl = _dl_dir()
 
         espelhos_path = state["files"].get("espelhos")
         banco_path = state["files"].get("banco")
@@ -276,8 +277,13 @@ def step3():
         if not banco_path or not os.path.exists(banco_path):
             raise FileNotFoundError("banco_consolidado.xlsx não encontrado.")
 
-        gerar_resumos(espelhos_xlsx_path=espelhos_path, banco_consolidado_xlsx_path=banco_path)
+        # ✅ CHAMADA POR POSIÇÃO (evita mismatch de nomes)
+        gerar_resumos(
+            espelhos_path,
+            banco_path,
+        )
 
+        dl = _dl_dir()
         final_path = os.path.join(dl, "Espelhos_Motoristas_FINAL.xlsx")
         if os.path.exists(final_path):
             os.remove(final_path)
@@ -312,4 +318,4 @@ def download():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")))
