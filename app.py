@@ -30,12 +30,10 @@ os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "troque-essa-chave-em-producao")
-
-# (Opcional)
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB
 
 # =========================
-# 🔒 SENHA FIXA (ALTERE AQUI)
+# 🔒 SENHA FIXA
 # =========================
 APP_PASSWORD = "espelho2026"
 
@@ -108,7 +106,6 @@ def is_logged_in() -> bool:
 
 
 def _is_filelike(obj) -> bool:
-    # BytesIO, file handles etc.
     return hasattr(obj, "read") and callable(obj.read)
 
 
@@ -122,36 +119,30 @@ def _ensure_bytesio_at_start(bio: BytesIO) -> BytesIO:
 
 def _save_result_to_path(result, out_path: str) -> str:
     """
-    Aceita retorno de core funcs como:
-    - BytesIO / filelike (web)
+    Aceita retorno como:
+    - BytesIO / filelike
     - bytes
     - str (path)
-    e grava em out_path quando necessário.
-    Retorna o path final que existe em disco.
+    e garante arquivo salvo em out_path.
     """
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
-    # filelike (BytesIO)
     if _is_filelike(result):
         bio = _ensure_bytesio_at_start(result)
         with open(out_path, "wb") as f:
             f.write(bio.read())
         return out_path
 
-    # raw bytes
     if isinstance(result, (bytes, bytearray)):
         with open(out_path, "wb") as f:
             f.write(result)
         return out_path
 
-    # path string
     if isinstance(result, str):
         if not os.path.exists(result):
             raise FileNotFoundError(f"Arquivo retornado não existe: {result}")
-        # se já é o mesmo path, ok
         if os.path.abspath(result) == os.path.abspath(out_path):
             return out_path
-        # copia para o workspace
         shutil.copyfile(result, out_path)
         return out_path
 
@@ -159,7 +150,7 @@ def _save_result_to_path(result, out_path: str) -> str:
 
 
 # =========================
-# 🔒 LOGIN ROUTES
+# LOGIN
 # =========================
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -171,7 +162,6 @@ def login():
             return redirect(url_for("index"))
         flash("Senha incorreta.", "error")
         return redirect(url_for("login"))
-
     return render_template("login.html")
 
 
@@ -189,7 +179,6 @@ def logout():
 def index():
     if not is_logged_in():
         return redirect(url_for("login"))
-
     state = load_state()
     return render_template("index.html", state=state)
 
@@ -255,14 +244,14 @@ def step1():
 
         banco_path = os.path.join(ws, "banco_consolidado.xlsx")
 
-        # Step 1 (web version): retorna path (ou pode retornar bytes/filelike — tratamos também)
+        # ✅ Ajuste: nomes corretos do step1 web:
+        # gerar_banco_consolidado(motoristas_xlsx=..., fechamento_xlsx=..., saida_xlsx=...)
         result = gerar_banco_consolidado(
-            motoristas_xlsx_path=state["files"]["motoristas"],
-            fechamento_xlsx_path=state["files"]["fechamento"],
-            saida_xlsx_path=banco_path,
+            motoristas_xlsx=state["files"]["motoristas"],
+            fechamento_xlsx=state["files"]["fechamento"],
+            saida_xlsx=banco_path,
         )
 
-        # garante arquivo no workspace (mesmo se retornar path diferente / bytesio)
         banco_path = _save_result_to_path(result, banco_path)
 
         state["files"]["banco"] = banco_path
@@ -296,12 +285,8 @@ def step2():
 
         espelhos_path = os.path.join(ws, "Espelhos_Motoristas.xlsx")
 
-        # ✅ Step 2 (web version): pelo seu erro, aceita APENAS 2 args:
-        # gerar_espelhos_motoristas(banco_consolidado, modelo)
-        result = gerar_espelhos_motoristas(
-            banco_path,
-            MODELO_PATH,
-        )
+        # ✅ Step2 web (pelo seu erro anterior): aceita 2 args (banco, modelo)
+        result = gerar_espelhos_motoristas(banco_path, MODELO_PATH)
 
         espelhos_path = _save_result_to_path(result, espelhos_path)
 
@@ -327,7 +312,6 @@ def step3():
         if not state.get("step2_done"):
             raise ValueError("Faça o passo 2 antes.")
 
-        ws = _ws_dir()
         dl = _dl_dir()
 
         espelhos_path = state["files"].get("espelhos")
@@ -338,19 +322,17 @@ def step3():
         if not banco_path or not os.path.exists(banco_path):
             raise FileNotFoundError("banco_consolidado.xlsx não encontrado.")
 
-        # Step 3: versão web pode retornar path ou bytes/filelike (tratamos os dois)
         result = gerar_resumos(
             espelhos_xlsx_path=espelhos_path,
             banco_consolidado_xlsx_path=banco_path,
         )
 
-        # garante que o espelhos final existe (se a função retornar bytes/path)
+        # se o step3 retornar bytes/path, garante arquivo atualizado em espelhos_path
         espelhos_path = _save_result_to_path(result, espelhos_path)
 
         final_path = os.path.join(dl, "Espelhos_Motoristas_FINAL.xlsx")
         if os.path.exists(final_path):
             os.remove(final_path)
-
         shutil.copyfile(espelhos_path, final_path)
 
         state["files"]["final"] = final_path
