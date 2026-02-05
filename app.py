@@ -3,8 +3,8 @@ import os
 import uuid
 import json
 import shutil
-from io import BytesIO
 
+from io import BytesIO
 from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash
 from werkzeug.utils import secure_filename
 
@@ -32,11 +32,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "troque-essa-chave-em-producao")
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB
 
-# =========================
-# 🔒 SENHA FIXA
-# =========================
 APP_PASSWORD = "espelho2026"
-
 
 # =========================
 # HELPERS
@@ -244,12 +240,10 @@ def step1():
 
         banco_path = os.path.join(ws, "banco_consolidado.xlsx")
 
-        # ✅ Ajuste: nomes corretos do step1 web:
-        # gerar_banco_consolidado(motoristas_xlsx=..., fechamento_xlsx=..., saida_xlsx=...)
+        # ✅ Step1 web: NÃO passa saida_xlsx (sua função não aceita)
         result = gerar_banco_consolidado(
             motoristas_xlsx=state["files"]["motoristas"],
             fechamento_xlsx=state["files"]["fechamento"],
-            saida_xlsx=banco_path,
         )
 
         banco_path = _save_result_to_path(result, banco_path)
@@ -285,7 +279,7 @@ def step2():
 
         espelhos_path = os.path.join(ws, "Espelhos_Motoristas.xlsx")
 
-        # ✅ Step2 web (pelo seu erro anterior): aceita 2 args (banco, modelo)
+        # ✅ Step2 web: sua função aceita 2 args (banco, modelo)
         result = gerar_espelhos_motoristas(banco_path, MODELO_PATH)
 
         espelhos_path = _save_result_to_path(result, espelhos_path)
@@ -327,12 +321,13 @@ def step3():
             banco_consolidado_xlsx_path=banco_path,
         )
 
-        # se o step3 retornar bytes/path, garante arquivo atualizado em espelhos_path
+        # garante que o arquivo final do step3 esteja escrito no mesmo espelhos_path
         espelhos_path = _save_result_to_path(result, espelhos_path)
 
         final_path = os.path.join(dl, "Espelhos_Motoristas_FINAL.xlsx")
         if os.path.exists(final_path):
             os.remove(final_path)
+
         shutil.copyfile(espelhos_path, final_path)
 
         state["files"]["final"] = final_path
