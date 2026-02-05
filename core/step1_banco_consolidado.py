@@ -2,48 +2,70 @@ import os
 import pandas as pd
 
 
-def _normalizar_colunas(df: pd.DataFrame) -> pd.DataFrame:
+def normalizar_colunas(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
-    df.columns = df.columns.str.strip().str.lower()
+    df.columns = df.columns.astype(str).str.strip().str.lower()
     return df
 
 
 def gerar_banco_consolidado(
-    motoristas_xlsx_path: str,
-    fechamento_xlsx_path: str,
-    saida_xlsx_path: str,
-    *,
-    coluna_data_idx: int = 2,  # Coluna C = índice 2
-    merge_key: str = "nome do motorista"
-) -> str:
+    motoristas_xlsx,
+    fechamento_xlsx,
+    saida_xlsx_path: str | None = None,
+) -> pd.DataFrame:
     """
-    Junta motoristas + fechamento e salva banco_consolidado.xlsx.
+    Gera o banco consolidado juntando fechamento + motoristas.
 
-    Retorna o path do arquivo gerado.
+    motoristas_xlsx / fechamento_xlsx:
+      - pode ser caminho (str) para .xlsx
+      - pode ser file-like (ex: request.files['motoristas'], BytesIO, etc)
+
+    saida_xlsx_path:
+      - se informado, salva o arquivo final nesse caminho
+      - se None, apenas retorna o DataFrame
     """
-    if not os.path.exists(motoristas_xlsx_path):
-        raise FileNotFoundError(f"Arquivo não encontrado: {motoristas_xlsx_path}")
-    if not os.path.exists(fechamento_xlsx_path):
-        raise FileNotFoundError(f"Arquivo não encontrado: {fechamento_xlsx_path}")
 
-    motoristas = _normalizar_colunas(pd.read_excel(motoristas_xlsx_path))
-    fechamento = _normalizar_colunas(pd.read_excel(fechamento_xlsx_path))
+    motoristas = normalizar_colunas(pd.read_excel(motoristas_xlsx))
+    fechamento = normalizar_colunas(pd.read_excel(fechamento_xlsx))
 
-    if merge_key not in motoristas.columns:
-        raise ValueError(f"Coluna '{merge_key}' não encontrada no arquivo de motoristas.")
-    if merge_key not in fechamento.columns:
-        raise ValueError(f"Coluna '{merge_key}' não encontrada no arquivo de fechamento.")
+    # ===============================
+    # GARANTIR COLUNA "contrato" (VEM DE MOTORISTAS)
+    # ===============================
+    possiveis_contrato = [
+        "contrato",
+        "n contrato",
+        "nº contrato",
+        "numero do contrato",
+        "número do contrato",
+        "contrato nº",
+        "contrato n",
+        "contrato numero",
+    ]
 
-    banco_consolidado = fechamento.merge(motoristas, on=merge_key, how="left")
+    col_contrato = next((c for c in possiveis_contrato if c in motoristas.columns), None)
+    if not col_contrato:
+        raise Exception("Coluna de contrato não encontrada em motoristas.xlsx (crie a coluna 'contrato').")
+    if col_contrato != "contrato":
+        motoristas = motoristas.rename(columns={col_contrato: "contrato"})
 
-    # Formatar data na coluna C (índice 2), se existir
-    if len(banco_consolidado.columns) > coluna_data_idx:
-        coluna_data = banco_consolidado.columns[coluna_data_idx]
+    # Merge
+    if "nome do motorista" not in fechamento.columns:
+        raise Exception("Coluna 'nome do motorista' não encontrada no fechamento.xlsx.")
+    if "nome do motorista" not in motoristas.columns:
+        raise Exception("Coluna 'nome do motorista' não encontrada no motoristas.xlsx.")
+
+    banco_consolidado = fechamento.merge(motoristas, on="nome do motorista", how="left")
+
+    # Formatar a coluna de data (você estava usando índice 2)
+    if banco_consolidado.shape[1] >= 3:
+        coluna_data = banco_consolidado.columns[2]
         banco_consolidado[coluna_data] = (
-            pd.to_datetime(banco_consolidado[coluna_data], errors="coerce")
-            .dt.strftime("%d/%m/%Y")
+            pd.to_datetime(banco_consolidado[coluna_data], errors="coerce").dt.strftime("%d/%m/%Y")
         )
 
-    os.makedirs(os.path.dirname(saida_xlsx_path), exist_ok=True)
-    banco_consolidado.to_excel(saida_xlsx_path, index=False)
-    return saida_xlsx_path
+    # Salvar, se solicitado
+    if saida_xlsx_path:
+        os.makedirs(os.path.dirname(saida_xlsx_path), exist_ok=True)
+        banco_consolidado.to_excel(saida_xlsx_path, index=False)
+
+    return banco_consolidado
