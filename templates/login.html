@@ -2,36 +2,42 @@
 <html lang="pt-br">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Login - Espelho Pagamento</title>
-  <style>
-    body{font-family:Arial,Helvetica,sans-serif;margin:24px;max-width:520px}
-    .card{border:1px solid #ddd;border-radius:10px;padding:18px}
-    .btn{padding:10px 14px;border-radius:8px;border:1px solid #333;background:#fff;cursor:pointer}
-    input{width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;margin:10px 0}
-    .ok{color:#0a7a2f}
-    .err{color:#b00020}
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login • Espelho Pagamento</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <div class="card">
-    <h2>🔒 Acesso restrito</h2>
-    <p>Digite a senha para acessar o sistema.</p>
+  <div class="login-shell">
+    <div class="login-card">
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <ul>
-          {% for category, msg in messages %}
-            <li class="{{ 'ok' if category=='ok' else 'err' }}">{{ msg }}</li>
+      <div class="login-brand">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+        <h1>Espelho Pagamento</h1>
+        <p>Acesso restrito • Informe a senha</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert {{ 'ok' if category == 'ok' else 'error' }}">
+              {{ message }}
+            </div>
           {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
+        {% endif %}
+      {% endwith %}
 
-    <form action="{{ url_for('login') }}" method="post">
-      <input type="password" name="password" placeholder="Senha" required />
-      <button class="btn" type="submit">Entrar</button>
-    </form>
+      <form method="POST" action="{{ url_for('login') }}">
+        <div class="field">
+          <label>Senha</label>
+          <input type="password" name="password" placeholder="Digite sua senha" required>
+        </div>
+
+        <div class="login-actions">
+          <button class="btn btn-primary" type="submit">Entrar</button>
+        </div>
+      </form>
+
+    </div>
   </div>
 </body>
 </html>

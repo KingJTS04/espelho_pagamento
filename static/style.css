@@ -4,9 +4,9 @@
    THEME (corporativo leve)
    ========================= */
 :root{
-  /* Cores pedidas */
-  --brand-orange: #ef8127;
-  --brand-blue:   #014890;
+  /* Cores base (mais vivo e combinando) */
+  --brand-orange: #ff8a2a; /* laranja mais vivo */
+  --brand-blue:   #0a3f86; /* azul que orna */
   --white:        #ffffff;
 
   /* Neutros */
@@ -36,7 +36,6 @@
    BASE
    ========================= */
 *{ box-sizing: border-box; }
-
 html, body{ height: 100%; }
 
 body{
@@ -45,18 +44,22 @@ body{
   color: var(--text);
   line-height: 1.45;
 
-  /* Fundo com degradê suave (azul -> neutro -> laranja) */
+  /* Degradê vertical: 90% laranja (topo) e 10% azul (base) */
   background:
-    radial-gradient(900px 600px at 10% 15%, rgba(1, 72, 144, 0.35), transparent 55%),
-    radial-gradient(900px 600px at 90% 20%, rgba(239, 129, 39, 0.32), transparent 60%),
-    linear-gradient(120deg, #014890 0%, #3f5f7a 35%, #8b6a53 65%, #ef8127 100%);
+    radial-gradient(900px 520px at 20% 10%, rgba(255, 255, 255, 0.22), transparent 55%),
+    radial-gradient(900px 520px at 80% 18%, rgba(255, 255, 255, 0.14), transparent 60%),
+    linear-gradient(
+      to bottom,
+      #ff8a2a 0%,
+      #ff8a2a 72%,
+      #ffb27b 90%,
+      #0a3f86 100%
+    );
   background-attachment: fixed;
 }
 
-a{
-  color: var(--brand-blue);
-  text-decoration: none;
-}
+/* links */
+a{ color: var(--brand-blue); text-decoration: none; }
 a:hover{ text-decoration: underline; }
 
 /* =========================
@@ -79,7 +82,7 @@ a:hover{ text-decoration: underline; }
 }
 
 /* =========================
-   TOPBAR (seu header)
+   TOPBAR (index)
    ========================= */
 .topbar{
   display: flex;
@@ -88,12 +91,12 @@ a:hover{ text-decoration: underline; }
   gap: 16px;
   margin-bottom: 16px;
 
-  background: rgba(255,255,255,0.88);
+  background: rgba(255,255,255,0.90);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow);
   padding: 14px 16px;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
 }
 
 .brand{
@@ -137,7 +140,7 @@ a:hover{ text-decoration: underline; }
   border-radius: var(--r-lg);
   box-shadow: var(--shadow);
   padding: 18px;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
 }
 
 .card h2{
@@ -152,7 +155,6 @@ a:hover{ text-decoration: underline; }
   font-size: 14px;
 }
 
-/* divisores do seu HTML */
 .divider{
   height: 1px;
   background: rgba(15, 23, 42, 0.10);
@@ -167,7 +169,6 @@ a:hover{ text-decoration: underline; }
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
-
 @media (max-width: 860px){
   .form-row{ grid-template-columns: 1fr; }
 }
@@ -179,22 +180,26 @@ a:hover{ text-decoration: underline; }
   margin-bottom: 6px;
 }
 
-input[type="file"]{
+input[type="file"],
+input[type="password"],
+input[type="text"]{
   width: 100%;
-  padding: 10px 10px;
+  padding: 10px 12px;
   border-radius: var(--r-md);
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.96);
   outline: none;
 }
 
-input[type="file"]:focus{
-  border-color: rgba(1, 72, 144, 0.40);
-  box-shadow: 0 0 0 4px rgba(1, 72, 144, 0.14);
+input[type="file"]:focus,
+input[type="password"]:focus,
+input[type="text"]:focus{
+  border-color: rgba(10, 63, 134, 0.40);
+  box-shadow: 0 0 0 4px rgba(10, 63, 134, 0.14);
 }
 
 /* =========================
-   BUTTONS (compatível com seu HTML)
+   BUTTONS
    ========================= */
 .btn{
   display: inline-flex;
@@ -207,7 +212,7 @@ input[type="file"]:focus{
   border: 1px solid transparent;
   cursor: pointer;
 
-  font-weight: 700;
+  font-weight: 800;
   font-size: 14px;
   letter-spacing: 0.2px;
 
@@ -220,18 +225,17 @@ input[type="file"]:focus{
 .btn-primary{
   background: var(--brand-blue);
   color: var(--white);
-  box-shadow: 0 10px 20px rgba(1,72,144,0.22);
+  box-shadow: 0 10px 20px rgba(10,63,134,0.22);
 }
-.btn-primary:hover{ background: #013e7d; }
+.btn-primary:hover{ background: #093a7a; }
 
 .btn-accent{
   background: var(--brand-orange);
   color: #1a120a;
-  box-shadow: 0 10px 20px rgba(239,129,39,0.20);
+  box-shadow: 0 10px 20px rgba(255,138,42,0.22);
 }
-.btn-accent:hover{ background: #e6751d; }
+.btn-accent:hover{ background: #ff7a12; }
 
-/* seu "btn-outline" do Sair */
 .btn-outline{
   background: rgba(255,255,255,0.75);
   border-color: var(--border);
@@ -241,7 +245,6 @@ input[type="file"]:focus{
   background: rgba(255,255,255,0.95);
 }
 
-/* disabled */
 .btn:disabled,
 .btn[disabled]{
   opacity: 0.55;
@@ -250,7 +253,7 @@ input[type="file"]:focus{
 }
 
 /* =========================
-   PILLS (Status upload/OK/Pendente)
+   PILLS
    ========================= */
 .pill{
   display: inline-flex;
@@ -258,7 +261,7 @@ input[type="file"]:focus{
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 900;
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.70);
 }
@@ -296,10 +299,61 @@ input[type="file"]:focus{
   box-shadow: 0 0 0 3px rgba(239,68,68,0.10);
 }
 
-/* =========================
-   SMALL TEXT
-   ========================= */
 .small{
   font-size: 12px;
   color: rgba(15, 23, 42, 0.65);
+}
+
+/* =========================
+   LOGIN (layout específico)
+   ========================= */
+.login-shell{
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 28px 16px;
+}
+
+.login-card{
+  width: min(420px, 100%);
+  background: rgba(255,255,255,0.94);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+  padding: 22px 20px;
+  backdrop-filter: blur(10px);
+}
+
+.login-brand{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.login-brand img{
+  height: 64px;
+  width: auto;
+  display: block;
+  border-radius: 14px;
+}
+
+.login-brand h1{
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.login-brand p{
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.login-actions{
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
 }

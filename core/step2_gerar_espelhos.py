@@ -1,7 +1,8 @@
 import os
 import re
+import unicodedata
 from io import BytesIO
-from typing import Union, Optional
+from typing import Union, Optional, Dict, Tuple
 
 import pandas as pd
 from openpyxl import load_workbook
@@ -32,6 +33,35 @@ def _to_bytes_io(src: FileLike) -> BytesIO:
     bio = BytesIO(data)
     bio.seek(0)
     return bio
+
+
+def _strip_accents(s: str) -> str:
+    # remove acentos: São -> Sao
+    nfkd = unicodedata.normalize("NFKD", s)
+    return "".join(ch for ch in nfkd if not unicodedata.combining(ch))
+
+
+def _norm_city_key(v) -> str:
+    """
+    Normaliza cidade para agrupamento:
+    - string
+    - trim
+    - remove acentos
+    - lowercase
+    - remove pontuação básica
+    - colapsa espaços
+    """
+    if v is None:
+        return ""
+    s = str(v).strip()
+    if s == "" or s.lower() == "nan":
+        return ""
+    s = _strip_accents(s)
+    s = s.lower()
+    # remove pontuação comum (mantém letras/números/espaço)
+    s = re.sub(r"[^a-z0-9\s]", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
 
 
 def gerar_espelhos_motoristas(
@@ -214,32 +244,24 @@ def gerar_espelhos_motoristas(
         prestador = get_val(linha_ref[col_prestador]) if col_prestador else ""
         tem_prestador = str(prestador).strip() != ""
 
-        # Doc: col_cnpj tem prioridade se existir/preenchido, senão cpf.
-        # (Aqui assume que o "dono" do doc e dados bancários já vem no banco consolidado conforme sua regra.)
         cnpj_val = get_val(linha_ref[col_cnpj]) if col_cnpj else ""
         cpf_val = get_val(linha_ref[col_cpf]) if col_cpf else get_val(linha_ref["cpf"])
         doc_val = cnpj_val if str(cnpj_val).strip() else cpf_val
 
-        # C4:D4
         if tem_prestador:
             ws["C4"] = f"{prestador} - {doc_val}".strip()
         else:
             ws["C4"] = f"{motorista} - {doc_val}".strip()
 
-        # C5:D5 (só se existir prestador)
         if tem_prestador:
             ws["C5"] = f"MOTORISTA: {motorista}"
             ws["C5"].alignment = align_center
             ws["D5"].alignment = align_center
-            # sem bordas
             ws["C5"].border = no_border
             ws["D5"].border = no_border
         else:
-            # Garantir vazio quando não tem prestador (não mexe no resto do layout)
             ws["C5"] = ""
-            # (não forço borda aqui: mantém o padrão do seu modelo)
 
-        # Contrato
         contrato_val = get_val(linha_ref[col_contrato]) if col_contrato else ""
         if str(contrato_val).strip():
             ws["F2"] = f"Contrato: {contrato_val}"
@@ -248,7 +270,6 @@ def gerar_espelhos_motoristas(
             ws["F2"] = "Contrato: INEXISTENTE"
             ws["F2"].font = font_bold_red
 
-        # Dados bancários (mesmas colunas; "dono" já muda conforme prestador estar preenchido no banco consolidado)
         favorecido_nome = prestador if tem_prestador else motorista
 
         set_info(ws, "F3", "Banco", linha_ref.get("banco"))
@@ -291,7 +312,7 @@ def gerar_espelhos_motoristas(
                 linha_atual += 1
 
         # =========================
-        # PARTE 3 — MAPEAMENTO POR CIDADE
+        # PARTE 3 — MAPEAMENTO POR CIDADE (NORMALIZADO)
         # =========================
         linha_atual += 1
 
@@ -311,6 +332,7 @@ def gerar_espelhos_motoristas(
         soma_geral_qtd = 0
         soma_geral_valor = 0
 
+        # Para cada cliente, agrupa por cidade NORMALIZADA (sem acento, sem case, etc.)
         for cliente in df_motorista["cliente"].drop_duplicates():
             ws.merge_cells(start_row=linha_atual, start_column=2, end_row=linha_atual, end_column=6)
             ws[f"B{linha_atual}"] = cliente
@@ -323,19 +345,35 @@ def gerar_espelhos_motoristas(
 
             linha_atual += 1
 
-            df_cliente = df_motorista[df_motorista["cliente"] == cliente]
-            cidades = df_cliente[col_cidade].dropna().unique()
+            df_cliente = df_motorista[df_motorista["cliente"] == cliente].copy()
 
-            for cidade in cidades:
-                quantidade = df_cliente[df_cliente[col_cidade] == cidade].shape[0]
-                valor_unitario = df_cliente[df_cliente[col_cidade] == cidade].iloc[0][col_custo]
-                valor_total = quantidade * valor_unitario
+            # cria chave normalizada da cidade
+            df_cliente["_cidade_key"] = df_cliente[col_cidade].apply(_norm_city_key)
 
-                soma_geral_qtd += quantidade
-                soma_geral_valor += valor_total
+            # remove vazios
+            df_cliente = df_cliente[df_cliente["_cidade_key"] != ""]
+
+            # mapa: key -> nome exibido (pega a primeira ocorrência "original" mais bonita)
+            # + agrega quantidade e valor unitário (pega primeiro) e calcula total
+            for key, grp in df_cliente.groupby("_cidade_key", sort=True):
+                cidade_display = str(grp[col_cidade].iloc[0]).strip()
+
+                quantidade = int(grp.shape[0])
+
+                # valor unitário: mantém a regra original (primeiro registro)
+                valor_unitario = grp.iloc[0][col_custo]
+                try:
+                    valor_unitario_num = float(valor_unitario)
+                except Exception:
+                    valor_unitario_num = valor_unitario  # se vier texto, mantém (vai dar problema no total)
+                valor_total = quantidade * valor_unitario_num if isinstance(valor_unitario_num, (int, float)) else ""
+
+                if isinstance(valor_total, (int, float)):
+                    soma_geral_qtd += quantidade
+                    soma_geral_valor += valor_total
 
                 ws.merge_cells(start_row=linha_atual, start_column=2, end_row=linha_atual, end_column=3)
-                ws[f"B{linha_atual}"] = cidade
+                ws[f"B{linha_atual}"] = cidade_display
                 ws[f"D{linha_atual}"] = quantidade
                 ws[f"E{linha_atual}"] = valor_unitario
                 ws[f"F{linha_atual}"] = valor_total
@@ -447,9 +485,6 @@ def gerar_espelhos_motoristas(
     return final_path
 
 
-# =========================
-# USO OFFLINE
-# =========================
 if __name__ == "__main__":
     CAMINHO_BANCO = "output/banco_consolidado.xlsx"
     CAMINHO_MODELO = "modelo/modelo.xlsx"
