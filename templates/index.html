@@ -1,95 +1,131 @@
-<!-- templates/index.html -->
 <!doctype html>
 <html lang="pt-br">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Gerador de Espelhos</title>
-  <style>
-    body{font-family:Arial,Helvetica,sans-serif;margin:24px;max-width:980px}
-    .card{border:1px solid #ddd;border-radius:10px;padding:16px;margin-bottom:16px}
-    .row{display:flex;gap:12px;flex-wrap:wrap}
-    .btn{padding:10px 14px;border-radius:8px;border:1px solid #333;background:#fff;cursor:pointer}
-    .btn[disabled]{opacity:.45;cursor:not-allowed}
-    .ok{color:#0a7a2f}
-    .err{color:#b00020}
-    .hint{color:#555;font-size:14px}
-    label{display:block;margin:10px 0 6px}
-    input[type=file]{width:100%}
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Painel • Espelho Pagamento</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <h2>Gerador de Banco → Espelhos → Resumos</h2>
+  <div class="container">
 
-  <div class="card">
-    <h3>1) Enviar arquivos</h3>
-    <p class="hint">Envie <b>motoristas.xlsx</b> e <b>fechamento.xlsx</b> e siga os passos.</p>
+    <div class="topbar">
+      <div class="brand">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+        <div class="title">
+          <h1>Gerador de Banco → Espelhos → Resumos</h1>
+          <p>Envie os arquivos e processe as etapas na ordem</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <a class="btn btn-outline" href="{{ url_for('logout') }}">Sair</a>
+      </div>
+    </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <ul>
-          {% for category, msg in messages %}
-            <li class="{{ 'ok' if category=='ok' else 'err' }}">{{ msg }}</li>
-          {% endfor %}
-        </ul>
+        {% for category, message in messages %}
+          <div class="alert {{ 'ok' if category == 'ok' else 'error' }}">
+            {{ message }}
+          </div>
+        {% endfor %}
       {% endif %}
     {% endwith %}
 
-    <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
-      <div class="row">
-        <div style="flex:1;min-width:280px">
-          <label>Arquivo de Motoristas (.xlsx)</label>
-          <input type="file" name="motoristas" accept=".xlsx" required />
-        </div>
-        <div style="flex:1;min-width:280px">
-          <label>Arquivo de Fechamento (.xlsx)</label>
-          <input type="file" name="fechamento" accept=".xlsx" required />
+    <div class="grid">
+
+      <!-- Card 1: Upload -->
+      <div class="card">
+        <h2>1) Enviar arquivos</h2>
+        <p>Envie <b>motoristas.xlsx</b> e <b>fechamento.xlsx</b> e siga os passos.</p>
+
+        <div class="divider"></div>
+
+        <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+          <div class="form-row">
+            <div class="field">
+              <label>Arquivo de Motoristas (.xlsx)</label>
+              <input type="file" name="motoristas" accept=".xlsx" required>
+            </div>
+
+            <div class="field">
+              <label>Arquivo de Fechamento (.xlsx)</label>
+              <input type="file" name="fechamento" accept=".xlsx" required>
+            </div>
+          </div>
+
+          <div style="margin-top: 12px; display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
+            <button class="btn btn-accent" type="submit">Enviar arquivos</button>
+
+            {% if state.uploaded %}
+              <span class="pill ok">Status upload: OK</span>
+            {% else %}
+              <span class="pill pending">Status upload: Pendente</span>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+
+      <!-- Card 2: Etapas -->
+      <div class="card">
+        <h2>2) Processar etapas</h2>
+
+        <div style="display:flex; flex-direction:column; gap: 10px; margin-top: 10px;">
+
+          <form method="POST" action="{{ url_for('step1') }}">
+            <div style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
+              <button class="btn btn-primary" type="submit" {% if not state.uploaded %}disabled{% endif %}>
+                Gerar Banco Consolidado (Passo 1)
+              </button>
+              {% if state.step1_done %}
+                <span class="pill ok">Status: OK</span>
+              {% else %}
+                <span class="pill pending">Status: Pendente</span>
+              {% endif %}
+            </div>
+          </form>
+
+          <form method="POST" action="{{ url_for('step2') }}">
+            <div style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
+              <button class="btn btn-primary" type="submit" {% if not state.step1_done %}disabled{% endif %}>
+                Gerar Espelhos (Passo 2)
+              </button>
+              {% if state.step2_done %}
+                <span class="pill ok">Status: OK</span>
+              {% else %}
+                <span class="pill pending">Status: Pendente</span>
+              {% endif %}
+            </div>
+          </form>
+
+          <form method="POST" action="{{ url_for('step3') }}">
+            <div style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
+              <button class="btn btn-primary" type="submit" {% if not state.step2_done %}disabled{% endif %}>
+                Gerar RESUMO e RESUMO TOTAL (Passo 3)
+              </button>
+              {% if state.step3_done %}
+                <span class="pill ok">Status: OK</span>
+              {% else %}
+                <span class="pill pending">Status: Pendente</span>
+              {% endif %}
+            </div>
+          </form>
+
+          <div class="divider"></div>
+
+          <div style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
+            {% if state.step3_done %}
+              <a class="btn btn-accent" href="{{ url_for('download') }}">Download (Espelhos_Motoristas.xlsx)</a>
+            {% else %}
+              <button class="btn btn-accent" disabled>Download (Espelhos_Motoristas.xlsx)</button>
+            {% endif %}
+            <span class="small">O download libera após o Passo 3.</span>
+          </div>
+
         </div>
       </div>
-      <div style="margin-top:14px">
-        <button class="btn" type="submit">Enviar arquivos</button>
-      </div>
-    </form>
 
-    <p class="hint">
-      Status upload: <b>{{ "OK" if state.uploaded else "Pendente" }}</b>
-    </p>
-  </div>
-
-  <div class="card">
-    <h3>2) Processar etapas</h3>
-
-    <form action="{{ url_for('step1') }}" method="post" style="margin-bottom:10px">
-      <button class="btn" type="submit" {% if not state.uploaded %}disabled{% endif %}>
-        Gerar Banco Consolidado (Passo 1)
-      </button>
-      <span class="hint">Status: <b>{{ "OK" if state.step1_done else "Pendente" }}</b></span>
-    </form>
-
-    <form action="{{ url_for('step2') }}" method="post" style="margin-bottom:10px">
-      <button class="btn" type="submit" {% if not state.step1_done %}disabled{% endif %}>
-        Gerar Espelhos (Passo 2)
-      </button>
-      <span class="hint">Status: <b>{{ "OK" if state.step2_done else "Pendente" }}</b></span>
-    </form>
-
-    <form action="{{ url_for('step3') }}" method="post" style="margin-bottom:10px">
-      <button class="btn" type="submit" {% if not state.step2_done %}disabled{% endif %}>
-        Gerar RESUMO e RESUMO TOTAL (Passo 3)
-      </button>
-      <span class="hint">Status: <b>{{ "OK" if state.step3_done else "Pendente" }}</b></span>
-    </form>
-
-    <div style="margin-top:12px">
-      <a class="btn" href="{{ url_for('download') }}" {% if not state.step3_done %}style="pointer-events:none;opacity:.45"{% endif %}>
-        Download (Espelhos_Motoristas.xlsx)
-      </a>
     </div>
-  </div>
-
-  <div class="card">
-    <h3>Arquivos no workspace</h3>
-    <pre style="white-space:pre-wrap">{{ state.files | tojson(indent=2) }}</pre>
   </div>
 </body>
 </html>
