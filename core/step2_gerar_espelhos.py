@@ -1,28 +1,66 @@
 import os
 import re
+from io import BytesIO
+from typing import Union, Optional
+
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Border, Side, PatternFill, Font
 
 
+FileLike = Union[str, BytesIO, bytes]
+
+
+def _to_bytes_io(src: FileLike) -> BytesIO:
+    """
+    Aceita:
+      - path (str)
+      - bytes
+      - BytesIO / file-like
+
+    Retorna BytesIO pronto para leitura (cursor no início).
+    """
+    if isinstance(src, BytesIO):
+        src.seek(0)
+        return src
+    if isinstance(src, (bytes, bytearray)):
+        bio = BytesIO(src)
+        bio.seek(0)
+        return bio
+    # str path
+    with open(src, "rb") as f:
+        data = f.read()
+    bio = BytesIO(data)
+    bio.seek(0)
+    return bio
+
+
 def gerar_espelhos_motoristas(
-    banco_consolidado_xlsx_path: str,
-    modelo_xlsx_path: str,
-    saida_espelhos_xlsx_path: str,
-) -> str:
+    banco_consolidado_input: FileLike,
+    modelo_input: FileLike,
+    *,
+    output_dir: Optional[str] = "output/espelhos",
+    output_filename: str = "Espelhos_Motoristas.xlsx",
+) -> Union[str, bytes]:
     """
-    Gera um único arquivo Excel com uma aba por motorista (Espelhos_Motoristas.xlsx).
+    Gera um único XLSX com uma aba por motorista.
 
-    Retorna o path do arquivo gerado.
+    - banco_consolidado_input: path/bytes/BytesIO do banco_consolidado.xlsx
+    - modelo_input: path/bytes/BytesIO do modelo.xlsx
+    - Se output_dir for None: retorna bytes do XLSX final (ideal para web).
+    - Se output_dir for str: salva em disco e retorna o path final.
     """
-    if not os.path.exists(banco_consolidado_xlsx_path):
-        raise FileNotFoundError(f"Arquivo não encontrado: {banco_consolidado_xlsx_path}")
-    if not os.path.exists(modelo_xlsx_path):
-        raise FileNotFoundError(f"Arquivo não encontrado: {modelo_xlsx_path}")
 
-    df = pd.read_excel(banco_consolidado_xlsx_path)
+    # =========================
+    # LER BANCO CONSOLIDADO
+    # =========================
+    banco_io = _to_bytes_io(banco_consolidado_input)
+    df = pd.read_excel(banco_io)
     df.columns = df.columns.str.strip().str.lower()
 
+    # =========================
+    # IDENTIFICAR COLUNAS
+    # =========================
     def achar_coluna(possiveis):
         for c in possiveis:
             if c in df.columns:
@@ -37,12 +75,19 @@ def gerar_espelhos_motoristas(
     col_status = achar_coluna(["status"])
     col_custo = achar_coluna(["custo", "valor", "valor unitario"])
 
+    # documento (preferir CNPJ, se existir)
+    col_cnpj = achar_coluna(["cnpj", "cnpj do favorecido", "cnpj/cpf", "cpf/cnpj"])
+    col_cpf = achar_coluna(["cpf", "cpf do favorecido", "cpf/cnpj", "cnpj/cpf"])
+
+    # contrato (vem do motoristas após o merge do step1)
+    col_contrato = achar_coluna(["contrato"])
+
     for obrigatoria in ["cpf", "banco", "agencia", "cliente", "romaneio"]:
         if obrigatoria not in df.columns:
-            raise Exception(f"Coluna '{obrigatoria}' não encontrada no banco consolidado.")
+            raise Exception(f"Coluna '{obrigatoria}' não encontrada.")
 
     if not all([col_motorista, col_conta, col_pix, col_data, col_cidade, col_status, col_custo]):
-        raise Exception("Coluna obrigatória não encontrada no banco consolidado (nome/cidade/data/status/custo etc).")
+        raise Exception("Coluna obrigatória não encontrada.")
 
     # =========================
     # ESTILOS
@@ -57,14 +102,33 @@ def gerar_espelhos_motoristas(
     fill_cliente = PatternFill(fill_type="solid", fgColor="D9D9D9")
     font_bold = Font(bold=True)
     font_bold_red = Font(bold=True, color="FF0000")
+    font_red = Font(color="FF0000")
 
-    formato_contabil = 'R$ #,##0.00_);R$ (#,##0.00)'
+    formato_contabil = "R$ #,##0.00_);R$ (#,##0.00)"
 
+    # =========================
+    # HELPERS
+    # =========================
     def nome_aba_valido(nome):
-        nome = re.sub(r'[\\/*?:\[\]]', '', str(nome))
+        nome = re.sub(r'[\\/*?:\[\]]', "", str(nome))
         return nome[:31]
 
-    def auto_largura_coluna_F(ws, start_row=2, end_row=7):
+    def aplicar_borda(ws, row, col_ini, col_fim, borda):
+        for c in range(col_ini, col_fim + 1):
+            ws.cell(row=row, column=c).border = borda
+
+    def aplicar_linha(ws, row, col_ini, col_fim, *, alignment=None, font=None, fill=None, borda=border_all):
+        for c in range(col_ini, col_fim + 1):
+            cell = ws.cell(row=row, column=c)
+            if alignment is not None:
+                cell.alignment = alignment
+            if font is not None:
+                cell.font = font
+            if fill is not None:
+                cell.fill = fill
+            cell.border = borda
+
+    def auto_largura_coluna_F(ws, start_row=2, end_row=8):
         max_len = 0
         for r in range(start_row, end_row + 1):
             v = ws[f"F{r}"].value
@@ -72,10 +136,35 @@ def gerar_espelhos_motoristas(
                 max_len = max(max_len, len(str(v)))
         ws.column_dimensions["F"].width = max_len + 2
 
+    def get_val(v):
+        if v is None:
+            return ""
+        if isinstance(v, float) and pd.isna(v):
+            return ""
+        return v
+
+    def is_empty(v) -> bool:
+        v = get_val(v)
+        return str(v).strip() == ""
+
+    def set_info(ws, addr: str, label: str, value):
+        """
+        Escreve: 'Label: Valor'
+        - Se Valor vazio => 'Label: INEXISTENTE' em negrito/vermelho
+        - Se Valor preenchido => negrito normal
+        """
+        if is_empty(value):
+            ws[addr] = f"{label}: INEXISTENTE"
+            ws[addr].font = font_bold_red
+        else:
+            ws[addr] = f"{label}: {value}"
+            ws[addr].font = font_bold
+
     # =========================
-    # ABRIR MODELO
+    # ABRIR MODELO (BytesIO compatível)
     # =========================
-    wb = load_workbook(modelo_xlsx_path)
+    modelo_io = _to_bytes_io(modelo_input)
+    wb = load_workbook(modelo_io)
     aba_modelo = wb.active
     aba_modelo.title = "MODELO_BASE"
 
@@ -89,22 +178,37 @@ def gerar_espelhos_motoristas(
         ws = wb.copy_worksheet(aba_modelo)
         ws.title = nome_aba_valido(motorista)
 
+        # =========================
         # PARTE 1 — DADOS FIXOS
-        ws["C4"] = motorista
-        ws["F2"] = f"Banco: {linha_ref['banco']}"
-        ws["F3"] = f"Agência: {linha_ref['agencia']}"
-        ws["F4"] = f"Conta: {linha_ref[col_conta]}"
-        ws["F5"] = f"Favorecido: {motorista}"
-        ws["F6"] = f"CPF/CNPJ do Favorecido: {linha_ref['cpf']}"
-        ws["F7"] = f"PIX: {linha_ref[col_pix]}"
+        # =========================
+        cnpj_val = get_val(linha_ref[col_cnpj]) if col_cnpj else ""
+        cpf_val = get_val(linha_ref[col_cpf]) if col_cpf else get_val(linha_ref["cpf"])
+        doc_val = cnpj_val if str(cnpj_val).strip() else cpf_val
 
-        for celula in ["F2", "F3", "F4", "F5", "F6", "F7"]:
-            ws[celula].font = font_bold
+        ws["C4"] = f"{motorista} - {doc_val}".strip()
 
-        auto_largura_coluna_F(ws)
+        contrato_val = get_val(linha_ref[col_contrato]) if col_contrato else ""
+        if str(contrato_val).strip():
+            ws["F2"] = f"Contrato: {contrato_val}"
+            ws["F2"].font = font_bold
+        else:
+            ws["F2"] = "Contrato: INEXISTENTE"
+            ws["F2"].font = font_bold_red
 
+        set_info(ws, "F3", "Banco", linha_ref.get("banco"))
+        set_info(ws, "F4", "Agência", linha_ref.get("agencia"))
+        set_info(ws, "F5", "Conta", linha_ref[col_conta] if col_conta else "")
+        set_info(ws, "F6", "Favorecido", motorista)
+        set_info(ws, "F7", "CPF/CNPJ do Favorecido", doc_val)
+        set_info(ws, "F8", "PIX", linha_ref[col_pix] if col_pix else "")
+
+        auto_largura_coluna_F(ws, start_row=2, end_row=8)
+
+        # =========================
         # PARTE 2 — TABELA VARIÁVEL
-        linha_atual = 12
+        # =========================
+        linha_atual = 11
+
         for cliente in df_motorista["cliente"].drop_duplicates():
             ws.merge_cells(start_row=linha_atual, start_column=1, end_row=linha_atual, end_column=6)
             cell = ws.cell(row=linha_atual, column=1)
@@ -112,10 +216,7 @@ def gerar_espelhos_motoristas(
             cell.alignment = align_center
             cell.fill = fill_cliente
             cell.font = font_bold
-
-            for col in range(1, 7):
-                ws.cell(row=linha_atual, column=col).border = border_all
-
+            aplicar_borda(ws, linha_atual, 1, 6, border_all)
             linha_atual += 1
 
             df_cliente = df_motorista[df_motorista["cliente"] == cliente]
@@ -130,14 +231,12 @@ def gerar_espelhos_motoristas(
                 ws.cell(row=linha_atual, column=5, value=df_rom.iloc[0][col_data]).font = font_bold
                 ws.cell(row=linha_atual, column=6, value=df_rom.iloc[0][col_status]).font = font_bold
 
-                for col in range(1, 7):
-                    c = ws.cell(row=linha_atual, column=col)
-                    c.alignment = align_center
-                    c.border = border_all
-
+                aplicar_linha(ws, linha_atual, 1, 6, alignment=align_center, borda=border_all)
                 linha_atual += 1
 
+        # =========================
         # PARTE 3 — MAPEAMENTO POR CIDADE
+        # =========================
         linha_atual += 1
 
         ws.merge_cells(start_row=linha_atual, start_column=2, end_row=linha_atual, end_column=3)
@@ -206,7 +305,9 @@ def gerar_espelhos_motoristas(
             ws[f"{col}{linha_atual}"].alignment = align_center
             ws[f"{col}{linha_atual}"].border = border_all
 
+        # =========================
         # VALOR TOTAL DA NOTA
+        # =========================
         linha_atual += 2
         linha_valor_nota = linha_atual
 
@@ -225,7 +326,9 @@ def gerar_espelhos_motoristas(
         for col in ["A", "B", "C", "D", "E", "F"]:
             ws[f"{col}{linha_atual}"].border = border_all
 
-        # DESCONTOS E VALOR LÍQUIDO
+        # =========================
+        # PARTE 4 — DESCONTOS E VALOR LÍQUIDO
+        # =========================
         linha_atual += 2
         linha_descontos = linha_atual
 
@@ -234,6 +337,7 @@ def gerar_espelhos_motoristas(
         ws[f"A{linha_atual}"].font = font_bold
         ws[f"A{linha_atual}"].alignment = align_left_center
 
+        ws[f"F{linha_atual}"] = f"=SUM(F{linha_atual+1}:F{linha_atual+5})"
         ws[f"F{linha_atual}"].number_format = formato_contabil
         ws[f"F{linha_atual}"].font = font_bold_red
         ws[f"F{linha_atual}"].alignment = align_center
@@ -245,6 +349,10 @@ def gerar_espelhos_motoristas(
             linha_atual += 1
             ws[f"A{linha_atual}"].border = border_lr
             ws[f"F{linha_atual}"].border = border_lr
+
+            ws[f"F{linha_atual}"].alignment = align_center
+            ws[f"F{linha_atual}"].font = font_red
+            ws[f"F{linha_atual}"].number_format = formato_contabil
 
         linha_atual += 1
 
@@ -263,9 +371,39 @@ def gerar_espelhos_motoristas(
             ws[f"{col}{linha_atual}"].fill = fill_cliente
             ws[f"{col}{linha_atual}"].font = font_bold
 
-    # remover aba base e salvar
+    # =========================
+    # REMOVER ABA MODELO
+    # =========================
     del wb["MODELO_BASE"]
 
-    os.makedirs(os.path.dirname(saida_espelhos_xlsx_path), exist_ok=True)
-    wb.save(saida_espelhos_xlsx_path)
-    return saida_espelhos_xlsx_path
+    # =========================
+    # SALVAR (disco ou bytes)
+    # =========================
+    if output_dir is None:
+        out = BytesIO()
+        wb.save(out)
+        out.seek(0)
+        return out.getvalue()
+
+    os.makedirs(output_dir, exist_ok=True)
+    final_path = os.path.join(output_dir, output_filename)
+    wb.save(final_path)
+    return final_path
+
+
+# =========================
+# USO OFFLINE (mantém seu padrão)
+# =========================
+if __name__ == "__main__":
+    CAMINHO_BANCO = "output/banco_consolidado.xlsx"
+    CAMINHO_MODELO = "modelo/modelo.xlsx"
+    PASTA_ESPELHOS = "output/espelhos"
+    ARQUIVO_FINAL = "Espelhos_Motoristas.xlsx"
+
+    saida = gerar_espelhos_motoristas(
+        CAMINHO_BANCO,
+        CAMINHO_MODELO,
+        output_dir=PASTA_ESPELHOS,
+        output_filename=ARQUIVO_FINAL,
+    )
+    print("✅ Espelhos gerados:", saida)
