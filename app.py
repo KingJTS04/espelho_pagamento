@@ -116,12 +116,18 @@ def _ensure_bytesio_at_start(bio: BytesIO) -> BytesIO:
 def _save_result_to_path(result, out_path: str) -> str:
     """
     Aceita retorno como:
+    - DataFrame-like (possui .to_excel) ✅
     - BytesIO / filelike
     - bytes
     - str (path)
     e garante arquivo salvo em out_path.
     """
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
+    # ✅ DataFrame-like -> salva em XLSX (duck typing)
+    if hasattr(result, "to_excel") and callable(getattr(result, "to_excel", None)):
+        result.to_excel(out_path, index=False)
+        return out_path
 
     if _is_filelike(result):
         bio = _ensure_bytesio_at_start(result)
