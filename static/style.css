@@ -4,9 +4,9 @@
    THEME (corporativo leve)
    ========================= */
 :root{
-  /* Cores base (mais vivo e combinando) */
-  --brand-orange: #ff8a2a; /* laranja mais vivo */
-  --brand-blue:   #0a3f86; /* azul que orna */
+  /* Cores base (equilíbrio fino) */
+  --brand-orange: #ff8a2a; /* laranja vivo */
+  --brand-blue:   #0a3f86; /* azul profundo */
   --white:        #ffffff;
 
   /* Neutros */
@@ -44,16 +44,21 @@ body{
   color: var(--text);
   line-height: 1.45;
 
-  /* Degradê vertical: 90% laranja (topo) e 10% azul (base) */
+  /* 🔥 Degradê vertical refinado
+     ~65% laranja | ~35% azul
+     transição suave e corporativa
+  */
   background:
-    radial-gradient(900px 520px at 20% 10%, rgba(255, 255, 255, 0.22), transparent 55%),
-    radial-gradient(900px 520px at 80% 18%, rgba(255, 255, 255, 0.14), transparent 60%),
+    radial-gradient(900px 520px at 25% 12%, rgba(255,255,255,0.16), transparent 58%),
+    radial-gradient(900px 520px at 75% 18%, rgba(255,255,255,0.10), transparent 62%),
     linear-gradient(
       to bottom,
       #ff8a2a 0%,
-      #ff8a2a 72%,
-      #ffb27b 90%,
-      #0a3f86 100%
+      #ff8a2a 55%,
+      #ff9b4a 65%,
+      #f2a36a 70%,
+      #0a3f86 85%,
+      #09356f 100%
     );
   background-attachment: fixed;
 }
@@ -91,12 +96,11 @@ a:hover{ text-decoration: underline; }
   gap: 16px;
   margin-bottom: 16px;
 
-  background: rgba(255,255,255,0.90);
+  background: rgba(255,255,255,0.92);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow);
   padding: 14px 16px;
-  backdrop-filter: blur(10px);
 }
 
 .brand{
@@ -116,7 +120,6 @@ a:hover{ text-decoration: underline; }
   margin: 0;
   font-size: 18px;
   font-weight: 800;
-  letter-spacing: 0.2px;
 }
 
 .title p{
@@ -140,7 +143,6 @@ a:hover{ text-decoration: underline; }
   border-radius: var(--r-lg);
   box-shadow: var(--shadow);
   padding: 18px;
-  backdrop-filter: blur(10px);
 }
 
 .card h2{
@@ -191,9 +193,7 @@ input[type="text"]{
   outline: none;
 }
 
-input[type="file"]:focus,
-input[type="password"]:focus,
-input[type="text"]:focus{
+input:focus{
   border-color: rgba(10, 63, 134, 0.40);
   box-shadow: 0 0 0 4px rgba(10, 63, 134, 0.14);
 }
@@ -214,42 +214,28 @@ input[type="text"]:focus{
 
   font-weight: 800;
   font-size: 14px;
-  letter-spacing: 0.2px;
-
-  transition: transform .06s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease, opacity .18s ease;
-  user-select: none;
 }
-
-.btn:active{ transform: translateY(1px); }
 
 .btn-primary{
   background: var(--brand-blue);
   color: var(--white);
-  box-shadow: 0 10px 20px rgba(10,63,134,0.22);
 }
 .btn-primary:hover{ background: #093a7a; }
 
 .btn-accent{
   background: var(--brand-orange);
   color: #1a120a;
-  box-shadow: 0 10px 20px rgba(255,138,42,0.22);
 }
 .btn-accent:hover{ background: #ff7a12; }
 
 .btn-outline{
-  background: rgba(255,255,255,0.75);
+  background: rgba(255,255,255,0.85);
   border-color: var(--border);
-  color: var(--text);
-}
-.btn-outline:hover{
-  background: rgba(255,255,255,0.95);
 }
 
-.btn:disabled,
-.btn[disabled]{
+.btn:disabled{
   opacity: 0.55;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 /* =========================
@@ -262,42 +248,26 @@ input[type="text"]:focus{
   border-radius: 999px;
   font-size: 12px;
   font-weight: 900;
+  background: rgba(255,255,255,0.75);
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.70);
 }
 
-.pill.ok{
-  color: var(--ok);
-  border-color: rgba(22,163,74,0.22);
-}
-
-.pill.pending{
-  color: var(--pending);
-  border-color: rgba(100,116,139,0.22);
-}
+.pill.ok{ color: var(--ok); }
+.pill.pending{ color: var(--pending); }
 
 /* =========================
-   ALERTS (flash)
+   ALERTS
    ========================= */
 .alert{
   border-radius: var(--r-md);
   padding: 10px 12px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.88);
+  background: rgba(255,255,255,0.90);
   margin: 10px 0 14px 0;
-  font-size: 14px;
-  box-shadow: 0 8px 18px rgba(2,6,23,0.10);
 }
 
-.alert.ok{
-  border-color: rgba(22,163,74,0.22);
-  box-shadow: 0 0 0 3px rgba(22,163,74,0.10);
-}
-
-.alert.error{
-  border-color: rgba(239,68,68,0.22);
-  box-shadow: 0 0 0 3px rgba(239,68,68,0.10);
-}
+.alert.ok{ border-left: 4px solid var(--ok); }
+.alert.error{ border-left: 4px solid var(--error); }
 
 .small{
   font-size: 12px;
@@ -305,7 +275,7 @@ input[type="text"]:focus{
 }
 
 /* =========================
-   LOGIN (layout específico)
+   LOGIN
    ========================= */
 .login-shell{
   min-height: 100vh;
@@ -316,12 +286,11 @@ input[type="text"]:focus{
 
 .login-card{
   width: min(420px, 100%);
-  background: rgba(255,255,255,0.94);
+  background: rgba(255,255,255,0.95);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow);
   padding: 22px 20px;
-  backdrop-filter: blur(10px);
 }
 
 .login-brand{
@@ -330,13 +299,10 @@ input[type="text"]:focus{
   align-items: center;
   gap: 10px;
   margin-bottom: 14px;
-  text-align: center;
 }
 
 .login-brand img{
   height: 64px;
-  width: auto;
-  display: block;
   border-radius: 14px;
 }
 
