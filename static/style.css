@@ -4,8 +4,8 @@
    THEME (corporativo leve)
    ========================= */
 :root{
-  /* Cores base (mais vivo e combinando) */
-  --brand-orange: #ff8a2a; /* laranja mais vivo */
+  /* Cores base */
+  --brand-orange: #ff8a2a; /* laranja vivo */
   --brand-blue:   #0a3f86; /* azul que orna */
   --white:        #ffffff;
 
@@ -44,15 +44,17 @@ body{
   color: var(--text);
   line-height: 1.45;
 
-  /* Degradê vertical: 90% laranja (topo) e 10% azul (base) */
+  /* Degradê vertical: 75% laranja (topo) e 25% azul (base)
+     Menos “branco”: highlights mais fracos e mais “vidro” nas cards
+  */
   background:
-    radial-gradient(900px 520px at 20% 10%, rgba(255, 255, 255, 0.22), transparent 55%),
-    radial-gradient(900px 520px at 80% 18%, rgba(255, 255, 255, 0.14), transparent 60%),
+    radial-gradient(900px 520px at 25% 12%, rgba(255, 255, 255, 0.10), transparent 55%),
+    radial-gradient(900px 520px at 75% 18%, rgba(255, 255, 255, 0.06), transparent 60%),
     linear-gradient(
       to bottom,
       #ff8a2a 0%,
-      #ff8a2a 72%,
-      #ffb27b 90%,
+      #ff8a2a 50%,
+      #ff9a45 68%,
       #0a3f86 100%
     );
   background-attachment: fixed;
@@ -70,7 +72,6 @@ a:hover{ text-decoration: underline; }
   margin: 28px auto 40px auto;
 }
 
-/* grid principal (2 cards) */
 .grid{
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -91,7 +92,7 @@ a:hover{ text-decoration: underline; }
   gap: 16px;
   margin-bottom: 16px;
 
-  background: rgba(255,255,255,0.90);
+  background: rgba(255,255,255,0.86);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow);
@@ -135,7 +136,7 @@ a:hover{ text-decoration: underline; }
    CARD
    ========================= */
 .card{
-  background: var(--card);
+  background: rgba(255,255,255,0.88); /* menos branco forte */
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow);
@@ -187,14 +188,14 @@ input[type="text"]{
   padding: 10px 12px;
   border-radius: var(--r-md);
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.96);
+  background: rgba(255,255,255,0.92);
   outline: none;
 }
 
 input[type="file"]:focus,
 input[type="password"]:focus,
 input[type="text"]:focus{
-  border-color: rgba(10, 63, 134, 0.40);
+  border-color: rgba(10, 63, 134, 0.42);
   box-shadow: 0 0 0 4px rgba(10, 63, 134, 0.14);
 }
 
@@ -232,17 +233,17 @@ input[type="text"]:focus{
 .btn-accent{
   background: var(--brand-orange);
   color: #1a120a;
-  box-shadow: 0 10px 20px rgba(255,138,42,0.22);
+  box-shadow: 0 10px 20px rgba(255,138,42,0.20);
 }
 .btn-accent:hover{ background: #ff7a12; }
 
 .btn-outline{
-  background: rgba(255,255,255,0.75);
+  background: rgba(255,255,255,0.72);
   border-color: var(--border);
   color: var(--text);
 }
 .btn-outline:hover{
-  background: rgba(255,255,255,0.95);
+  background: rgba(255,255,255,0.90);
 }
 
 .btn:disabled,
@@ -263,7 +264,7 @@ input[type="text"]:focus{
   font-size: 12px;
   font-weight: 900;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.70);
+  background: rgba(255,255,255,0.65);
 }
 
 .pill.ok{
@@ -283,7 +284,7 @@ input[type="text"]:focus{
   border-radius: var(--r-md);
   padding: 10px 12px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.88);
+  background: rgba(255,255,255,0.86);
   margin: 10px 0 14px 0;
   font-size: 14px;
   box-shadow: 0 8px 18px rgba(2,6,23,0.10);
@@ -316,7 +317,7 @@ input[type="text"]:focus{
 
 .login-card{
   width: min(420px, 100%);
-  background: rgba(255,255,255,0.94);
+  background: rgba(255,255,255,0.90); /* menos branco */
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow);
