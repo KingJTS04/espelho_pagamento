@@ -13,7 +13,7 @@
       <div class="brand">
         <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
         <div class="title">
-          <h1>Gerador de Banco → Espelhos → Resumos</h1>
+          <h1>Gerador de Espelhos</h1>
           <p>Envie os arquivos e processe as etapas na ordem</p>
         </div>
       </div>
@@ -36,18 +36,18 @@
 
       <!-- Card 1: Upload -->
       <div class="card">
-        <h2>1) Enviar arquivos</h2>
+        <h2>•Enviar arquivos</h2>
         <div class="divider"></div>
 
         <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
           <div class="form-row">
             <div class="field">
-              <label>Arquivo de Motoristas (.xlsx)</label>
+              <label>Banco De Dados Do Motorista (.xlsx)</label>
               <input type="file" name="motoristas" accept=".xlsx" required>
             </div>
 
             <div class="field">
-              <label>Arquivo de Fechamento (.xlsx)</label>
+              <label>Base De Fechamento (.xlsx)</label>
               <input type="file" name="fechamento" accept=".xlsx" required>
             </div>
           </div>
@@ -66,14 +66,14 @@
 
       <!-- Card 2: Etapas -->
       <div class="card">
-        <h2>2) Processar etapas</h2>
+        <h2>•Processar etapas</h2>
 
         <div style="display:flex; flex-direction:column; gap: 10px; margin-top: 10px;">
 
           <form method="POST" action="{{ url_for('step1') }}">
             <div style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
               <button class="btn btn-primary" type="submit" {% if not state.uploaded %}disabled{% endif %}>
-                Gerar Banco Consolidado (Passo 1)
+                Gerar Banco Consolidado
               </button>
               {% if state.step1_done %}
                 <span class="pill ok">Status: OK</span>
@@ -86,7 +86,7 @@
           <form method="POST" action="{{ url_for('step2') }}">
             <div style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
               <button class="btn btn-primary" type="submit" {% if not state.step1_done %}disabled{% endif %}>
-                Gerar Espelhos (Passo 2)
+                Gerar Espelhos
               </button>
               {% if state.step2_done %}
                 <span class="pill ok">Status: OK</span>
@@ -99,7 +99,7 @@
           <form method="POST" action="{{ url_for('step3') }}">
             <div style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
               <button class="btn btn-primary" type="submit" {% if not state.step2_done %}disabled{% endif %}>
-                Gerar RESUMO e RESUMO TOTAL (Passo 3)
+                Gerar RESUMO e RESUMO TOTAL
               </button>
               {% if state.step3_done %}
                 <span class="pill ok">Status: OK</span>
@@ -113,11 +113,10 @@
 
           <div style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
             {% if state.step3_done %}
-              <a class="btn btn-accent" href="{{ url_for('download') }}">Download (Espelhos_Motoristas.xlsx)</a>
+              <a class="btn btn-accent" href="{{ url_for('download') }}">Download</a>
             {% else %}
-              <button class="btn btn-accent" disabled>Download (Espelhos_Motoristas.xlsx)</button>
+              <button class="btn btn-accent" disabled>Download</button>
             {% endif %}
-            <span class="small">O download libera após o Passo 3.</span>
           </div>
 
         </div>
