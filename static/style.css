@@ -1,40 +1,26 @@
-/* static/style.css */
-
 /* =========================
-   THEME (corporativo)
+   THEME
    ========================= */
 :root{
-  /* Paleta */
   --brand-orange: #ef8127;
-  --brand-orange-2: #f39b3a; /* laranja mais vivo p/ o topo */
-  --brand-blue:   #014890;
-  --brand-blue-2: #023a72;   /* azul mais encorpado p/ base */
+  --brand-orange-strong: #f28c28;
+  --brand-blue: #014890;
+  --brand-blue-strong: #023a72;
 
-  /* Texto / neutros */
   --white: #ffffff;
-  --text:  #0f172a;
-  --muted: rgba(15, 23, 42, 0.72);
-  --border: rgba(255,255,255,0.22);
+  --text: #0f172a;
+  --muted: #475569;
+  --border: #e5e7eb;
 
-  /* Superfícies (menos branco, mais "glass") */
-  --card: rgba(255,255,255,0.14);
-  --card-strong: rgba(255,255,255,0.18);
+  --shadow: 0 10px 30px rgba(2, 6, 23, 0.18);
 
-  /* Sombra */
-  --shadow: 0 12px 34px rgba(2, 6, 23, 0.24);
+  --ok: #16a34a;
+  --pending: #64748b;
+  --error: #ef4444;
 
-  /* Radius */
   --r-lg: 18px;
   --r-md: 12px;
   --r-sm: 10px;
-
-  /* Estados */
-  --ok: #22c55e;
-  --pending: #cbd5e1;
-  --error: #fb7185;
-
-  /* Focus */
-  --focus: rgba(255,255,255,0.28);
 }
 
 /* =========================
@@ -46,63 +32,52 @@ html, body{ height: 100%; }
 
 body{
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  color: rgba(255,255,255,0.92);
-  line-height: 1.45;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
 
-  /* Fundo: 60% laranja (topo) -> 40% azul (base) + ondas */
+  /* FUNDO COM DEGRADÊ + ONDA */
   background:
-    /* ondas (linha ondulada) - camada 1 */
-    radial-gradient(1200px 180px at 50% 44%,
-      rgba(255,255,255,0.18) 0%,
-      rgba(255,255,255,0.18) 14%,
-      transparent 15%,
-      transparent 25%,
-      rgba(255,255,255,0.10) 26%,
-      rgba(255,255,255,0.10) 38%,
-      transparent 39%,
-      transparent 100%),
-
-    /* ondas (linha ondulada) - camada 2 (levemente deslocada) */
-    radial-gradient(1200px 180px at 50% 48%,
-      rgba(255,255,255,0.10) 0%,
-      rgba(255,255,255,0.10) 12%,
+    /* onda */
+    radial-gradient(1200px 160px at 50% 58%,
+      rgba(255,255,255,0.55) 0%,
+      rgba(255,255,255,0.55) 12%,
       transparent 13%,
-      transparent 24%,
-      rgba(255,255,255,0.06) 25%,
-      rgba(255,255,255,0.06) 36%,
-      transparent 37%,
-      transparent 100%),
-
-    /* gradiente principal */
+      transparent 100%
+    ),
+    /* degradê principal */
     linear-gradient(
       180deg,
-      var(--brand-orange-2) 0%,
-      var(--brand-orange)   60%,
-      var(--brand-blue)     60%,
-      var(--brand-blue-2)   100%
+      var(--brand-orange-strong) 0%,
+      var(--brand-orange) 60%,
+      var(--brand-blue) 60%,
+      var(--brand-blue-strong) 100%
     );
-
-  background-attachment: fixed;
 }
 
-/* Links */
-a{ color: rgba(255,255,255,0.92); text-decoration: none; }
+/* =========================
+   LINKS
+   ========================= */
+a{
+  color: var(--brand-blue);
+  text-decoration: none;
+}
 a:hover{ text-decoration: underline; }
 
 /* =========================
-   CONTAINER / LAYOUT
+   CONTAINER
    ========================= */
 .container{
   width: min(1100px, calc(100% - 32px));
   margin: 28px auto 40px auto;
 }
 
-/* grid principal (2 cards) */
+/* =========================
+   GRID
+   ========================= */
 .grid{
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 16px;
 }
 
 @media (max-width: 860px){
@@ -114,17 +89,15 @@ a:hover{ text-decoration: underline; }
    ========================= */
 .topbar{
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   gap: 16px;
-  margin-bottom: 16px;
 
-  background: rgba(255,255,255,0.16);
-  border: 1px solid var(--border);
+  background: var(--white);
   border-radius: var(--r-lg);
-  box-shadow: var(--shadow);
   padding: 14px 16px;
-  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
 }
 
 .brand{
@@ -135,63 +108,45 @@ a:hover{ text-decoration: underline; }
 
 .brand img{
   height: 44px;
-  width: auto;
-  display: block;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.10);
-  padding: 6px;
-  border: 1px solid rgba(255,255,255,0.18);
 }
 
 .title h1{
   margin: 0;
   font-size: 18px;
   font-weight: 800;
-  letter-spacing: 0.2px;
-  color: rgba(255,255,255,0.95);
 }
 
 .title p{
   margin: 2px 0 0 0;
   font-size: 13px;
-  color: rgba(255,255,255,0.78);
-}
-
-.topbar-actions{
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  color: var(--muted);
 }
 
 /* =========================
-   CARD
+   CARDS (BRANCOS)
    ========================= */
 .card{
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: var(--white);
   border-radius: var(--r-lg);
-  box-shadow: var(--shadow);
   padding: 18px;
-  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
 }
 
 .card h2{
   margin: 0 0 8px 0;
   font-size: 18px;
-  font-weight: 850;
-  color: rgba(255,255,255,0.96);
+  font-weight: 800;
 }
 
 .card p{
   margin: 0 0 10px 0;
-  color: rgba(255,255,255,0.82);
+  color: var(--muted);
   font-size: 14px;
 }
 
-/* divisores do HTML */
 .divider{
   height: 1px;
-  background: rgba(255,255,255,0.18);
+  background: #e5e7eb;
   margin: 14px 0;
 }
 
@@ -211,7 +166,7 @@ a:hover{ text-decoration: underline; }
 .field label{
   display: block;
   font-size: 13px;
-  color: rgba(255,255,255,0.80);
+  color: var(--muted);
   margin-bottom: 6px;
 }
 
@@ -219,185 +174,127 @@ input[type="file"],
 input[type="text"],
 input[type="password"]{
   width: 100%;
-  padding: 11px 12px;
+  padding: 10px 12px;
   border-radius: var(--r-md);
-  border: 1px solid rgba(255,255,255,0.22);
-  background: rgba(10, 12, 18, 0.12);
-  color: rgba(255,255,255,0.92);
+  border: 1px solid var(--border);
+  background: var(--white);
+}
+
+input:focus{
   outline: none;
-}
-
-input[type="file"]::file-selector-button{
-  border: 1px solid rgba(255,255,255,0.22);
-  background: rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.92);
-  border-radius: 999px;
-  padding: 7px 10px;
-  margin-right: 10px;
-  cursor: pointer;
-}
-
-input[type="file"]:focus,
-input[type="text"]:focus,
-input[type="password"]:focus{
-  border-color: rgba(255,255,255,0.34);
-  box-shadow: 0 0 0 4px var(--focus);
+  border-color: var(--brand-blue);
+  box-shadow: 0 0 0 3px rgba(1,72,144,0.15);
 }
 
 /* =========================
    BUTTONS
    ========================= */
 .btn{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-
   padding: 10px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.18);
+  border: none;
+  font-weight: 700;
   cursor: pointer;
-
-  font-weight: 800;
-  font-size: 14px;
-  letter-spacing: 0.2px;
-
-  transition: transform .06s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease, opacity .18s ease;
-  user-select: none;
 }
-
-.btn:active{ transform: translateY(1px); }
 
 .btn-primary{
-  background: rgba(1, 72, 144, 0.86);
-  color: rgba(255,255,255,0.96);
-  box-shadow: 0 12px 24px rgba(1,72,144,0.28);
+  background: var(--brand-blue);
+  color: var(--white);
 }
+
 .btn-primary:hover{
-  background: rgba(1, 72, 144, 0.95);
+  background: #013e7d;
 }
 
 .btn-accent{
-  background: rgba(239, 129, 39, 0.90);
-  color: rgba(15, 23, 42, 0.92);
-  box-shadow: 0 12px 24px rgba(239,129,39,0.22);
+  background: var(--brand-orange);
+  color: #1a120a;
 }
+
 .btn-accent:hover{
-  background: rgba(239, 129, 39, 0.98);
+  background: #e6751d;
 }
 
-/* seu btn-outline do "Sair" */
 .btn-outline{
-  background: rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.92);
-}
-.btn-outline:hover{
-  background: rgba(255,255,255,0.18);
+  background: transparent;
+  border: 1px solid var(--border);
 }
 
-/* disabled */
-.btn:disabled,
-.btn[disabled]{
-  opacity: 0.55;
+.btn:disabled{
+  opacity: 0.6;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 /* =========================
-   PILLS (Status)
+   STATUS PILLS
    ========================= */
 .pill{
-  display: inline-flex;
-  align-items: center;
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 900;
-  border: 1px solid rgba(255,255,255,0.20);
-  background: rgba(0,0,0,0.10);
-  color: rgba(255,255,255,0.88);
+  font-weight: 700;
 }
 
 .pill.ok{
-  border-color: rgba(34,197,94,0.28);
-  color: rgba(217,255,230,0.95);
+  color: var(--ok);
 }
 
 .pill.pending{
-  border-color: rgba(203,213,225,0.22);
-  color: rgba(255,255,255,0.82);
+  color: var(--pending);
 }
 
 /* =========================
-   ALERTS (flash)
+   ALERTS
    ========================= */
 .alert{
+  background: var(--white);
   border-radius: var(--r-md);
   padding: 10px 12px;
-  border: 1px solid rgba(255,255,255,0.20);
-  background: rgba(0,0,0,0.14);
-  margin: 10px 0 14px 0;
-  font-size: 14px;
-  box-shadow: 0 10px 20px rgba(2,6,23,0.22);
-  backdrop-filter: blur(10px);
+  margin: 10px 0;
+  box-shadow: var(--shadow);
 }
 
-.alert.ok{
-  border-color: rgba(34,197,94,0.28);
-}
-
-.alert.error{
-  border-color: rgba(251,113,133,0.28);
-}
+.alert.ok{ border-left: 4px solid var(--ok); }
+.alert.error{ border-left: 4px solid var(--error); }
 
 /* =========================
    SMALL TEXT
    ========================= */
 .small{
   font-size: 12px;
-  color: rgba(255,255,255,0.78);
+  color: var(--muted);
 }
 
 /* =========================
-   LOGIN (caso seu login.html tenha container próprio)
+   LOGIN
    ========================= */
 .login-wrap{
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 24px;
 }
 
 .login-card{
-  width: min(440px, calc(100% - 20px));
-  background: rgba(255,255,255,0.16);
-  border: 1px solid rgba(255,255,255,0.22);
+  width: 420px;
+  background: var(--white);
   border-radius: var(--r-lg);
+  padding: 24px;
   box-shadow: var(--shadow);
-  padding: 22px;
-  backdrop-filter: blur(14px);
 }
 
 .login-logo{
   display: flex;
-  align-items: center;
   justify-content: center;
   margin-bottom: 14px;
 }
 
 .login-logo img{
-  height: 54px;
-  width: auto;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.10);
-  padding: 8px;
-  border: 1px solid rgba(255,255,255,0.18);
+  height: 56px;
 }
 
 .login-title{
   text-align: center;
-  margin: 0 0 14px 0;
   font-size: 18px;
-  font-weight: 900;
-  color: rgba(255,255,255,0.95);
+  font-weight: 800;
+  margin-bottom: 16px;
 }
