@@ -1,40 +1,31 @@
 /* static/style.css */
 
 /* =========================
-   THEME (corporativo leve)
+   THEME (corporativo)
    ========================= */
 :root{
-  /* Cores base (equilíbrio fino) */
-  --brand-orange: #ff8a2a; /* laranja vivo */
-  --brand-blue:   #0a3f86; /* azul profundo */
+  /* manter o mesmo tom */
+  --brand-orange: #ff8a2a;
+  --brand-blue:   #0a3f86;
   --white:        #ffffff;
 
-  /* Neutros */
   --text: #0f172a;
   --muted: #475569;
   --border: rgba(15, 23, 42, 0.12);
 
-  /* Superfícies */
-  --card: rgba(255,255,255,0.92);
-  --card-strong: rgba(255,255,255,0.98);
+  /* Cards agora 100% brancos (sem transparência) */
+  --card: #ffffff;
 
-  /* Sombras */
-  --shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
+  --shadow: 0 12px 34px rgba(2, 6, 23, 0.14);
 
-  /* Radius */
   --r-lg: 18px;
   --r-md: 12px;
-  --r-sm: 10px;
 
-  /* Estados */
   --ok: #16a34a;
   --pending: #64748b;
   --error: #ef4444;
 }
 
-/* =========================
-   BASE
-   ========================= */
 *{ box-sizing: border-box; }
 html, body{ height: 100%; }
 
@@ -44,50 +35,41 @@ body{
   color: var(--text);
   line-height: 1.45;
 
-  /* 🔥 Degradê vertical refinado
-     ~65% laranja | ~35% azul
-     transição suave e corporativa
-  */
+  /* ✅ Degradê corporativo CONTÍNUO (sem “linhas/faixas”) */
   background:
-    radial-gradient(900px 520px at 25% 12%, rgba(255,255,255,0.16), transparent 58%),
-    radial-gradient(900px 520px at 75% 18%, rgba(255,255,255,0.10), transparent 62%),
+    radial-gradient(900px 520px at 25% 10%, rgba(255,255,255,0.14), transparent 60%),
+    radial-gradient(900px 520px at 70% 18%, rgba(255,255,255,0.10), transparent 62%),
     linear-gradient(
       to bottom,
       #ff8a2a 0%,
-      #ff8a2a 55%,
-      #ff9b4a 65%,
-      #f2a36a 70%,
-      #0a3f86 85%,
-      #09356f 100%
+      #ff932f 22%,
+      #f6a067 50%,
+      #b07a78 72%,
+      #3b5c86 86%,
+      #0a3f86 100%
     );
   background-attachment: fixed;
 }
 
-/* links */
 a{ color: var(--brand-blue); text-decoration: none; }
 a:hover{ text-decoration: underline; }
 
-/* =========================
-   CONTAINER / LAYOUT
-   ========================= */
 .container{
   width: min(1100px, calc(100% - 32px));
   margin: 28px auto 40px auto;
 }
 
-/* grid principal (2 cards) */
 .grid{
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
-
 @media (max-width: 860px){
   .grid{ grid-template-columns: 1fr; }
 }
 
 /* =========================
-   TOPBAR (index)
+   TOPBAR
    ========================= */
 .topbar{
   display: flex;
@@ -96,7 +78,7 @@ a:hover{ text-decoration: underline; }
   gap: 16px;
   margin-bottom: 16px;
 
-  background: rgba(255,255,255,0.92);
+  background: #ffffff;
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow);
@@ -108,7 +90,6 @@ a:hover{ text-decoration: underline; }
   align-items: center;
   gap: 12px;
 }
-
 .brand img{
   height: 44px;
   width: auto;
@@ -189,17 +170,19 @@ input[type="text"]{
   padding: 10px 12px;
   border-radius: var(--r-md);
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.96);
+  background: #ffffff;
   outline: none;
 }
 
 input:focus{
-  border-color: rgba(10, 63, 134, 0.40);
-  box-shadow: 0 0 0 4px rgba(10, 63, 134, 0.14);
+  border-color: rgba(10, 63, 134, 0.35);
+  box-shadow: 0 0 0 4px rgba(10, 63, 134, 0.12);
 }
 
 /* =========================
-   BUTTONS
+   BUTTONS (cores invertidas)
+   - btn-primary era azul -> agora LARANJA
+   - btn-accent era laranja -> agora AZUL
    ========================= */
 .btn{
   display: inline-flex;
@@ -214,28 +197,42 @@ input:focus{
 
   font-weight: 800;
   font-size: 14px;
+  letter-spacing: 0.2px;
+
+  transition: transform .06s ease, box-shadow .18s ease, background .18s ease, opacity .18s ease;
 }
 
+.btn:active{ transform: translateY(1px); }
+
+/* ✅ agora é laranja */
 .btn-primary{
-  background: var(--brand-blue);
-  color: var(--white);
-}
-.btn-primary:hover{ background: #093a7a; }
-
-.btn-accent{
   background: var(--brand-orange);
   color: #1a120a;
+  box-shadow: 0 10px 20px rgba(255,138,42,0.22);
 }
-.btn-accent:hover{ background: #ff7a12; }
+.btn-primary:hover{ background: #ff7a12; }
+
+/* ✅ agora é azul */
+.btn-accent{
+  background: var(--brand-blue);
+  color: var(--white);
+  box-shadow: 0 10px 20px rgba(10,63,134,0.22);
+}
+.btn-accent:hover{ background: #093a7a; }
 
 .btn-outline{
-  background: rgba(255,255,255,0.85);
+  background: #ffffff;
   border-color: var(--border);
+  color: var(--text);
+}
+.btn-outline:hover{
+  background: rgba(255,255,255,0.92);
 }
 
 .btn:disabled{
   opacity: 0.55;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* =========================
@@ -248,12 +245,12 @@ input:focus{
   border-radius: 999px;
   font-size: 12px;
   font-weight: 900;
-  background: rgba(255,255,255,0.75);
+  background: #ffffff;
   border: 1px solid var(--border);
 }
 
-.pill.ok{ color: var(--ok); }
-.pill.pending{ color: var(--pending); }
+.pill.ok{ color: var(--ok); border-color: rgba(22,163,74,0.18); }
+.pill.pending{ color: var(--pending); border-color: rgba(100,116,139,0.18); }
 
 /* =========================
    ALERTS
@@ -262,8 +259,9 @@ input:focus{
   border-radius: var(--r-md);
   padding: 10px 12px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.90);
+  background: #ffffff;
   margin: 10px 0 14px 0;
+  box-shadow: 0 8px 18px rgba(2,6,23,0.10);
 }
 
 .alert.ok{ border-left: 4px solid var(--ok); }
@@ -286,7 +284,7 @@ input:focus{
 
 .login-card{
   width: min(420px, 100%);
-  background: rgba(255,255,255,0.95);
+  background: #ffffff;
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow);
@@ -303,6 +301,8 @@ input:focus{
 
 .login-brand img{
   height: 64px;
+  width: auto;
+  display: block;
   border-radius: 14px;
 }
 
