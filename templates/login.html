@@ -8,23 +8,13 @@
 </head>
 <body>
   <div class="login-shell">
-    <div class="login-card">
 
+    <div class="login-card">
       <div class="login-brand">
         <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
         <h1>Espelho Pagamento</h1>
         <p>Acesso restrito • Informe a senha</p>
       </div>
-
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="alert {{ 'ok' if category == 'ok' else 'error' }}">
-              {{ message }}
-            </div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
 
       <form method="POST" action="{{ url_for('login') }}">
         <div class="field">
@@ -36,8 +26,37 @@
           <button class="btn btn-primary" type="submit">Entrar</button>
         </div>
       </form>
-
     </div>
+
+    <!-- ✅ Mensagens fora do card -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="toast-area">
+          {% for category, message in messages %}
+            <div class="toast alert {{ 'ok' if category == 'ok' else 'error' }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
   </div>
+
+  <script>
+    // some com o tempo (não permanente)
+    window.addEventListener("load", () => {
+      const toasts = document.querySelectorAll(".toast");
+      if (!toasts.length) return;
+
+      setTimeout(() => {
+        toasts.forEach(t => t.classList.add("fadeout"));
+      }, 2400);
+
+      setTimeout(() => {
+        toasts.forEach(t => t.remove());
+      }, 3600);
+    });
+  </script>
 </body>
 </html>

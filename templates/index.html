@@ -7,39 +7,39 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+
+  <!-- ✅ Estado para o JS (SEM JINJA DENTRO DO SCRIPT) -->
+  <div
+    id="page-state"
+    data-uploaded="{{ 1 if state.uploaded else 0 }}"
+    data-step1="{{ 1 if state.step1_done else 0 }}"
+    data-step2="{{ 1 if state.step2_done else 0 }}"
+    data-step3="{{ 1 if state.step3_done else 0 }}"
+  ></div>
+
   <div class="container">
 
     <div class="topbar">
       <div class="brand">
         <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
         <div class="title">
-          <h1>Gerador de Espelhos</h1>
-          <p>Envie os arquivos e processe as etapas na ordem</p>
+          <h1 class="title-center title-uppercase title-blue">GERADOR DE ESPELHOS</h1>
         </div>
       </div>
+
       <div class="topbar-actions">
-        <a class="btn btn-outline" href="{{ url_for('logout') }}">Sair</a>
+        <a class="btn btn-outline btn-logout" href="{{ url_for('logout') }}">Sair</a>
       </div>
     </div>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert {{ 'ok' if category == 'ok' else 'error' }}">
-            {{ message }}
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
 
     <div class="grid">
 
       <!-- Card 1: Upload -->
       <div class="card">
-        <h2>•Enviar arquivos</h2>
+        <h2 class="section-title">ENVIAR ARQUIVOS</h2>
         <div class="divider"></div>
 
-        <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data" data-action="upload">
           <div class="form-row">
             <div class="field">
               <label>Banco De Dados Do Motorista (.xlsx)</label>
@@ -53,59 +53,67 @@
           </div>
 
           <div style="margin-top: 12px; display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
-            <button class="btn btn-accent" type="submit">Enviar arquivos</button>
-
-            {% if state.uploaded %}
-              <span class="pill ok">Status upload: OK</span>
-            {% else %}
-              <span class="pill pending">Status upload: Pendente</span>
-            {% endif %}
+            <button
+              class="btn btn-accent js-progress-btn"
+              type="submit"
+              data-id="upload"
+              data-label="Enviar arquivos"
+              data-done="Enviado!"
+            >
+              Enviar arquivos
+            </button>
           </div>
         </form>
       </div>
 
       <!-- Card 2: Etapas -->
       <div class="card">
-        <h2>•Processar etapas</h2>
+        <h2 class="section-title">PROCESSAR ETAPAS</h2>
 
         <div style="display:flex; flex-direction:column; gap: 10px; margin-top: 10px;">
 
-          <form method="POST" action="{{ url_for('step1') }}">
+          <form method="POST" action="{{ url_for('step1') }}" data-action="step1">
             <div style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
-              <button class="btn btn-primary" type="submit" {% if not state.uploaded %}disabled{% endif %}>
+              <button
+                class="btn btn-primary js-progress-btn"
+                type="submit"
+                {% if not state.uploaded %}disabled{% endif %}
+                data-id="step1"
+                data-label="Gerar Banco Consolidado"
+                data-done="Banco Consolidado Gerado!"
+              >
                 Gerar Banco Consolidado
               </button>
-              {% if state.step1_done %}
-                <span class="pill ok">Status: OK</span>
-              {% else %}
-                <span class="pill pending">Status: Pendente</span>
-              {% endif %}
             </div>
           </form>
 
-          <form method="POST" action="{{ url_for('step2') }}">
+          <form method="POST" action="{{ url_for('step2') }}" data-action="step2">
             <div style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
-              <button class="btn btn-primary" type="submit" {% if not state.step1_done %}disabled{% endif %}>
+              <button
+                class="btn btn-primary js-progress-btn"
+                type="submit"
+                {% if not state.step1_done %}disabled{% endif %}
+                data-id="step2"
+                data-label="Gerar Espelhos"
+                data-done="Espelhos Gerados!"
+              >
                 Gerar Espelhos
               </button>
-              {% if state.step2_done %}
-                <span class="pill ok">Status: OK</span>
-              {% else %}
-                <span class="pill pending">Status: Pendente</span>
-              {% endif %}
             </div>
           </form>
 
-          <form method="POST" action="{{ url_for('step3') }}">
+          <form method="POST" action="{{ url_for('step3') }}" data-action="step3">
             <div style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
-              <button class="btn btn-primary" type="submit" {% if not state.step2_done %}disabled{% endif %}>
+              <button
+                class="btn btn-primary js-progress-btn"
+                type="submit"
+                {% if not state.step2_done %}disabled{% endif %}
+                data-id="step3"
+                data-label="Gerar RESUMO e RESUMO TOTAL"
+                data-done="Resumos Gerados!"
+              >
                 Gerar RESUMO e RESUMO TOTAL
               </button>
-              {% if state.step3_done %}
-                <span class="pill ok">Status: OK</span>
-              {% else %}
-                <span class="pill pending">Status: Pendente</span>
-              {% endif %}
             </div>
           </form>
 
@@ -113,7 +121,13 @@
 
           <div style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
             {% if state.step3_done %}
-              <a class="btn btn-accent" href="{{ url_for('download') }}">Download</a>
+              <a
+                class="btn btn-accent js-download-btn"
+                href="{{ url_for('download') }}"
+                data-done="Download Realizado!"
+              >
+                Download
+              </a>
             {% else %}
               <button class="btn btn-accent" disabled>Download</button>
             {% endif %}
@@ -123,6 +137,117 @@
       </div>
 
     </div>
+
+    <!-- ✅ FLASH MESSAGES fora dos cards (embaixo) -->
+    <div id="flash-area" style="margin-top: 14px;">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert {{ 'ok' if category == 'ok' else 'error' }} js-flash">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    </div>
+
   </div>
+
+  <script>
+    // =========================
+    // 1) Ler estado (sem Jinja dentro do JS)
+    // =========================
+    const elState = document.getElementById("page-state");
+    const state = {
+      uploaded: elState?.dataset.uploaded === "1",
+      step1_done: elState?.dataset.step1 === "1",
+      step2_done: elState?.dataset.step2 === "1",
+      step3_done: elState?.dataset.step3 === "1",
+    };
+
+    // =========================
+    // 2) Auto-sumir flashes
+    // =========================
+    window.addEventListener("load", () => {
+      const flashes = document.querySelectorAll(".js-flash");
+      if (!flashes.length) return;
+
+      flashes.forEach((f) => {
+        // some em 4.5s (com fade)
+        setTimeout(() => {
+          f.style.transition = "opacity 0.8s ease, transform 0.8s ease";
+          f.style.opacity = "0";
+          f.style.transform = "translateY(6px)";
+          setTimeout(() => f.remove(), 900);
+        }, 4500);
+      });
+    });
+
+    // =========================
+    // 3) Spinner + texto "processando"
+    // =========================
+    function setLoading(btn, loading) {
+      if (!btn) return;
+
+      if (loading) {
+        btn.dataset._old = btn.textContent;
+        btn.classList.add("is-loading");
+        btn.disabled = true;
+
+        // Se for <a>, trava clique
+        if (btn.tagName.toLowerCase() === "a") {
+          btn.dataset._href = btn.getAttribute("href") || "";
+          btn.removeAttribute("href");
+          btn.setAttribute("aria-disabled", "true");
+        }
+
+        const label = btn.getAttribute("data-label") || btn.textContent || "Processando...";
+        btn.innerHTML = `<span class="spinner" aria-hidden="true"></span>${label}`;
+      } else {
+        btn.classList.remove("is-loading");
+        btn.disabled = false;
+        btn.textContent = btn.dataset._old || btn.textContent;
+
+        if (btn.tagName.toLowerCase() === "a") {
+          const href = btn.dataset._href;
+          if (href) btn.setAttribute("href", href);
+          btn.removeAttribute("aria-disabled");
+        }
+      }
+    }
+
+    // Ao clicar em qualquer botão de submit: mostra loading até recarregar
+    document.querySelectorAll("form[data-action]").forEach((form) => {
+      form.addEventListener("submit", () => {
+        const btn = form.querySelector(".js-progress-btn");
+        setLoading(btn, true);
+      });
+    });
+
+    // Download: muda texto ao clicar (não dá pra saber o fim real sem backend, mas é o que você pediu)
+    const dlBtn = document.querySelector(".js-download-btn");
+    if (dlBtn) {
+      dlBtn.addEventListener("click", () => {
+        const done = dlBtn.getAttribute("data-done") || "Download Realizado!";
+        dlBtn.textContent = done;
+      });
+    }
+
+    // =========================
+    // 4) Após reload: se step já está feito, troca texto do botão para "done"
+    // =========================
+    const byId = (id) => document.querySelector(`.js-progress-btn[data-id="${id}"]`);
+
+    const btnUpload = byId("upload");
+    const btnStep1  = byId("step1");
+    const btnStep2  = byId("step2");
+    const btnStep3  = byId("step3");
+
+    if (btnUpload && state.uploaded) btnUpload.textContent = btnUpload.getAttribute("data-done") || btnUpload.textContent;
+    if (btnStep1  && state.step1_done) btnStep1.textContent = btnStep1.getAttribute("data-done") || btnStep1.textContent;
+    if (btnStep2  && state.step2_done) btnStep2.textContent = btnStep2.getAttribute("data-done") || btnStep2.textContent;
+    if (btnStep3  && state.step3_done) btnStep3.textContent = btnStep3.getAttribute("data-done") || btnStep3.textContent;
+  </script>
+
 </body>
 </html>
