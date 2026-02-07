@@ -83,31 +83,29 @@ a:hover{ text-decoration: underline; }
 
 .brand{
   display: flex;
-  align-items: flex-start; /* logo “mais pra cima” */
+  align-items: flex-start;
   gap: 12px;
 }
 
-/* ✅ (pedido) Logo após login MENOR */
 .brand img{
-  height: 24px;            /* menor */
+  height: 24px;
   width: auto;
   display: block;
   border-radius: 6px;
   margin-top: 2px;
 }
 
-/* ✅ (pedido) título centralizado, maior e em destaque */
 .title{
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex: 1;                /* ajuda centralizar no meio da topbar */
+  flex: 1;
 }
 
 .title h1{
   margin: 0;
-  font-size: 24px;        /* maior */
+  font-size: 24px;
   font-weight: 1000;
   letter-spacing: 1.4px;
   text-transform: uppercase;
@@ -116,7 +114,6 @@ a:hover{ text-decoration: underline; }
   line-height: 1.1;
 }
 
-/* se existir <p> e você quiser manter, fica discreto */
 .title p{
   margin: 2px 0 0 0;
   font-size: 12px;
@@ -214,14 +211,18 @@ input:focus{
 
 .btn:active{ transform: translateY(1px); }
 
-/* ✅ (pedido) Botões laranja com TEXTO BRANCO */
+/* botões laranja (mantém) */
 .btn-primary{
   background: var(--brand-orange);
-  color: var(--white); /* era #1a120a -> agora branco */
+  color: var(--white);
   box-shadow: 0 10px 20px rgba(255,138,42,0.22);
 }
-.btn-primary:hover{ background: #ff7a12; }
+/* ✅ (pedido) Entrar: no hover fica AZUL */
+.btn-primary:hover{
+  background: var(--brand-blue);
+}
 
+/* botões azuis (mantém) */
 .btn-accent{
   background: var(--brand-blue);
   color: var(--white);
@@ -229,16 +230,16 @@ input:focus{
 }
 .btn-accent:hover{ background: #093a7a; }
 
-/* ✅ (pedido) Botão SAIR: laranja + texto branco, hover azul */
+/* ✅ (pedido) Sair: padrão AZUL, hover LARANJA */
 .btn-outline{
-  background: var(--brand-orange);
-  border: 1px solid rgba(255,138,42,0.35);
+  background: var(--brand-blue);
+  border: 1px solid rgba(10,63,134,0.25);
   color: var(--white);
   box-shadow: 0 8px 18px rgba(2,6,23,0.12);
 }
 .btn-outline:hover{
-  background: var(--brand-blue);
-  border-color: rgba(10,63,134,0.25);
+  background: var(--brand-orange);
+  border-color: rgba(255,138,42,0.35);
   color: var(--white);
   box-shadow: 0 10px 22px rgba(2,6,23,0.16);
 }
@@ -280,7 +281,6 @@ input:focus{
   animation: spin 0.8s linear infinite;
 }
 
-/* ✅ como btn-primary agora tem texto branco, spinner branco combina */
 .btn-primary .spinner{
   border-color: rgba(255,255,255,0.45);
   border-top-color: rgba(255,255,255,0.98);
@@ -326,20 +326,20 @@ input:focus{
   margin-bottom: 14px;
 }
 
-/* logo menor no login */
+/* ✅ (pedido) Logo do login BEM menor */
 .login-brand img{
-  height: 44px;
+  height: 28px;
   width: auto;
   display: block;
-  border-radius: 12px;
+  border-radius: 8px;
 }
 
-/* “ESPELHO PAGAMENTO” maior, azul e maiúsculo */
+/* ✅ (pedido) Texto maior/destaque e “ESPELHO DE PAGAMENTO” */
 .login-brand h1{
   margin: 0;
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: 1.1px;
+  font-size: 24px;
+  font-weight: 1000;
+  letter-spacing: 1.2px;
   text-transform: uppercase;
   color: var(--brand-blue);
 }
