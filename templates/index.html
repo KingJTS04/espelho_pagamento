@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!doctype html>
 <html lang="pt-br">
 <head>
@@ -77,7 +78,7 @@
               <button
                 class="btn btn-primary js-progress-btn"
                 type="submit"
-                {% if not state.uploaded %}disabled{% endif %}
+                {% if (not state.uploaded) or state.step1_done %}disabled{% endif %}
                 data-id="step1"
                 data-label="Gerar Banco Consolidado"
                 data-done="Banco Consolidado Gerado!"
@@ -92,7 +93,7 @@
               <button
                 class="btn btn-primary js-progress-btn"
                 type="submit"
-                {% if not state.step1_done %}disabled{% endif %}
+                {% if (not state.step1_done) or state.step2_done %}disabled{% endif %}
                 data-id="step2"
                 data-label="Gerar Espelhos"
                 data-done="Espelhos Gerados!"
@@ -107,7 +108,7 @@
               <button
                 class="btn btn-primary js-progress-btn"
                 type="submit"
-                {% if not state.step2_done %}disabled{% endif %}
+                {% if (not state.step2_done) or state.step3_done %}disabled{% endif %}
                 data-id="step3"
                 data-label="Gerar RESUMO e RESUMO TOTAL"
                 data-done="Resumos Gerados!"
@@ -173,7 +174,6 @@
       if (!flashes.length) return;
 
       flashes.forEach((f) => {
-        // some em 4.5s (com fade)
         setTimeout(() => {
           f.style.transition = "opacity 0.8s ease, transform 0.8s ease";
           f.style.opacity = "0";
@@ -194,7 +194,6 @@
         btn.classList.add("is-loading");
         btn.disabled = true;
 
-        // Se for <a>, trava clique
         if (btn.tagName.toLowerCase() === "a") {
           btn.dataset._href = btn.getAttribute("href") || "";
           btn.removeAttribute("href");
@@ -216,7 +215,6 @@
       }
     }
 
-    // Ao clicar em qualquer botão de submit: mostra loading até recarregar
     document.querySelectorAll("form[data-action]").forEach((form) => {
       form.addEventListener("submit", () => {
         const btn = form.querySelector(".js-progress-btn");
@@ -224,7 +222,6 @@
       });
     });
 
-    // Download: muda texto ao clicar (não dá pra saber o fim real sem backend, mas é o que você pediu)
     const dlBtn = document.querySelector(".js-download-btn");
     if (dlBtn) {
       dlBtn.addEventListener("click", () => {

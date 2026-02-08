@@ -5,7 +5,17 @@ import json
 import shutil
 
 from io import BytesIO
-from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    session,
+    send_file,
+    flash,
+    after_this_request,   # ✅ ALTERAÇÃO: para resetar após download
+)
 from werkzeug.utils import secure_filename
 
 from core.step1_banco_consolidado import gerar_banco_consolidado
@@ -151,6 +161,33 @@ def _save_result_to_path(result, out_path: str) -> str:
     raise RuntimeError(f"Retorno inesperado: {type(result)}")
 
 
+# ✅ ALTERAÇÃO: resetar tudo após download (e impedir reprocessar passo já concluído)
+def reset_flow_state() -> None:
+    sid = session.get("sid")
+    if not sid:
+        return
+
+    ws = os.path.join(WORKSPACES_DIR, sid)
+    dl = os.path.join(DOWNLOADS_DIR, sid)
+
+    if os.path.exists(ws):
+        shutil.rmtree(ws, ignore_errors=True)
+    if os.path.exists(dl):
+        shutil.rmtree(dl, ignore_errors=True)
+
+    os.makedirs(ws, exist_ok=True)
+    os.makedirs(dl, exist_ok=True)
+
+    state = {
+        "uploaded": False,
+        "step1_done": False,
+        "step2_done": False,
+        "step3_done": False,
+        "files": {}
+    }
+    save_state(state)
+
+
 # =========================
 # LOGIN
 # =========================
@@ -241,6 +278,10 @@ def step1():
 
     state = load_state()
     try:
+        # ✅ ALTERAÇÃO: não permitir rodar de novo
+        if state.get("step1_done"):
+            raise ValueError("Passo 1 já foi concluído. Siga para o Passo 2.")
+
         require_uploaded_files(state)
         ws = _ws_dir()
 
@@ -274,6 +315,10 @@ def step2():
 
     state = load_state()
     try:
+        # ✅ ALTERAÇÃO: não permitir rodar de novo
+        if state.get("step2_done"):
+            raise ValueError("Passo 2 já foi concluído. Siga para o Passo 3.")
+
         if not state.get("step1_done"):
             raise ValueError("Faça o passo 1 antes.")
 
@@ -309,6 +354,10 @@ def step3():
 
     state = load_state()
     try:
+        # ✅ ALTERAÇÃO: não permitir rodar de novo
+        if state.get("step3_done"):
+            raise ValueError("Passo 3 já foi concluído. Faça o download.")
+
         if not state.get("step2_done"):
             raise ValueError("Faça o passo 2 antes.")
 
@@ -358,6 +407,12 @@ def download():
     if not state.get("step3_done") or not final_path or not os.path.exists(final_path):
         flash("Arquivo final ainda não está pronto.", "error")
         return redirect(url_for("index"))
+
+    # ✅ ALTERAÇÃO: após servir o download, reinicia tudo
+    @after_this_request
+    def _cleanup(response):
+        reset_flow_state()
+        return response
 
     return send_file(final_path, as_attachment=True, download_name="Espelhos_Motoristas.xlsx")
 
