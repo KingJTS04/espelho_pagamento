@@ -32,18 +32,27 @@ body{
   color: var(--text);
   line-height: 1.45;
 
+  /* ✅ Degradê corporativo SUAVE, contínuo e sem marcações */
   background:
-    radial-gradient(900px 520px at 25% 10%, rgba(255,255,255,0.14), transparent 60%),
-    radial-gradient(900px 520px at 70% 18%, rgba(255,255,255,0.10), transparent 62%),
+    radial-gradient(
+      1200px 700px at 30% 15%,
+      rgba(255,255,255,0.10),
+      transparent 65%
+    ),
+    radial-gradient(
+      1200px 700px at 70% 25%,
+      rgba(255,255,255,0.06),
+      transparent 70%
+    ),
     linear-gradient(
       to bottom,
       #ff8a2a 0%,
-      #ff932f 22%,
-      #f6a067 50%,
-      #b07a78 72%,
-      #3b5c86 86%,
+      #ff8a2a 58%,
+      #f29a5f 72%,
+      #6b7fa8 88%,
       #0a3f86 100%
     );
+
   background-attachment: fixed;
 }
 
