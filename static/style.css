@@ -32,25 +32,15 @@ body{
   color: var(--text);
   line-height: 1.45;
 
-  /* ✅ Degradê corporativo SUAVE, contínuo e sem marcações */
+  /* ✅ Apenas laranja + azul (suave, sem faixa e sem “3ª cor” visível) */
   background:
-    radial-gradient(
-      1200px 700px at 30% 15%,
-      rgba(255,255,255,0.10),
-      transparent 65%
-    ),
-    radial-gradient(
-      1200px 700px at 70% 25%,
-      rgba(255,255,255,0.06),
-      transparent 70%
-    ),
+    radial-gradient(1200px 700px at 25% 10%, rgba(255,255,255,0.10), transparent 70%),
+    radial-gradient(1200px 700px at 75% 20%, rgba(255,255,255,0.06), transparent 72%),
     linear-gradient(
       to bottom,
-      #ff8a2a 0%,
-      #ff8a2a 58%,
-      #f29a5f 72%,
-      #6b7fa8 88%,
-      #0a3f86 100%
+      var(--brand-orange) 0%,
+      var(--brand-orange) 62%,
+      var(--brand-blue) 100%
     );
 
   background-attachment: fixed;
