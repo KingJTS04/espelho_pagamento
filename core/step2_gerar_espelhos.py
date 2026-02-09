@@ -2,7 +2,7 @@ import os
 import re
 import unicodedata
 from io import BytesIO
-from typing import Union, Optional, Dict, Tuple
+from typing import Union, Optional
 
 import pandas as pd
 from openpyxl import load_workbook
@@ -36,7 +36,6 @@ def _to_bytes_io(src: FileLike) -> BytesIO:
 
 
 def _strip_accents(s: str) -> str:
-    # remove acentos: São -> Sao
     nfkd = unicodedata.normalize("NFKD", s)
     return "".join(ch for ch in nfkd if not unicodedata.combining(ch))
 
@@ -44,7 +43,6 @@ def _strip_accents(s: str) -> str:
 def _norm_city_key(v) -> str:
     """
     Normaliza cidade para agrupamento:
-    - string
     - trim
     - remove acentos
     - lowercase
@@ -58,7 +56,6 @@ def _norm_city_key(v) -> str:
         return ""
     s = _strip_accents(s)
     s = s.lower()
-    # remove pontuação comum (mantém letras/números/espaço)
     s = re.sub(r"[^a-z0-9\s]", " ", s)
     s = re.sub(r"\s+", " ", s).strip()
     return s
@@ -106,11 +103,9 @@ def gerar_espelhos_motoristas(
     col_status = achar_coluna(["status"])
     col_custo = achar_coluna(["custo", "valor", "valor unitario", "valor unitário"])
 
-    # documento (preferir CNPJ, se existir)
     col_cnpj = achar_coluna(["cnpj", "cnpj do favorecido", "cnpj/cpf", "cpf/cnpj"])
     col_cpf = achar_coluna(["cpf", "cpf do favorecido", "cpf/cnpj", "cnpj/cpf"])
 
-    # contrato (vem do motoristas após o merge do step1)
     col_contrato = achar_coluna(["contrato"])
 
     for obrigatoria in ["cpf", "banco", "agencia", "cliente", "romaneio"]:
@@ -153,11 +148,6 @@ def gerar_espelhos_motoristas(
         return str(v).strip() == ""
 
     def set_info(ws, addr: str, label: str, value):
-        """
-        Escreve: 'Label: Valor'
-        - Se Valor vazio => 'Label: INEXISTENTE' em negrito/vermelho
-        - Se Valor preenchido => negrito normal
-        """
         if is_empty(value):
             ws[addr] = f"{label}: INEXISTENTE"
             ws[addr].font = font_bold_red
@@ -194,9 +184,6 @@ def gerar_espelhos_motoristas(
         return name
 
     def nome_aba_valido(nome_motorista: str, used: set) -> str:
-        """
-        Aba = primeiro + segundo nome (se existir), respeitando 31 chars e evitando duplicados.
-        """
         base = _sanitize_sheet(nome_motorista)
         parts = [p for p in base.split(" ") if p]
         if len(parts) >= 2:
@@ -219,7 +206,7 @@ def gerar_espelhos_motoristas(
         return candidate
 
     # =========================
-    # ABRIR MODELO (BytesIO compatível)
+    # ABRIR MODELO
     # =========================
     modelo_io = _to_bytes_io(modelo_input)
     wb = load_workbook(modelo_io)
@@ -312,7 +299,7 @@ def gerar_espelhos_motoristas(
                 linha_atual += 1
 
         # =========================
-        # PARTE 3 — MAPEAMENTO POR CIDADE (NORMALIZADO)
+        # PARTE 3 — MAPEAMENTO POR CIDADE (NORMALIZADO + OPÇÃO A)
         # =========================
         linha_atual += 1
 
@@ -332,7 +319,6 @@ def gerar_espelhos_motoristas(
         soma_geral_qtd = 0
         soma_geral_valor = 0
 
-        # Para cada cliente, agrupa por cidade NORMALIZADA (sem acento, sem case, etc.)
         for cliente in df_motorista["cliente"].drop_duplicates():
             ws.merge_cells(start_row=linha_atual, start_column=2, end_row=linha_atual, end_column=6)
             ws[f"B{linha_atual}"] = cliente
@@ -350,32 +336,34 @@ def gerar_espelhos_motoristas(
             # cria chave normalizada da cidade
             df_cliente["_cidade_key"] = df_cliente[col_cidade].apply(_norm_city_key)
 
-            # remove vazios
+            # valor unitário numérico para chave (se não der, vira NaN)
+            df_cliente["_unit_num"] = pd.to_numeric(df_cliente[col_custo], errors="coerce")
+
+            # remove cidades vazias (mantém unit NaN se existir, mas cidade vazia não entra)
             df_cliente = df_cliente[df_cliente["_cidade_key"] != ""]
 
-            # mapa: key -> nome exibido (pega a primeira ocorrência "original" mais bonita)
-            # + agrega quantidade e valor unitário (pega primeiro) e calcula total
-            for key, grp in df_cliente.groupby("_cidade_key", sort=True):
+            # ✅ OPÇÃO A: agrupar por (cidade_normalizada + valor_unitário)
+            # (se unit vier inválido e virar NaN, fica agrupado separado também)
+            for (key, unit_num), grp in df_cliente.groupby(["_cidade_key", "_unit_num"], sort=True, dropna=False):
                 cidade_display = str(grp[col_cidade].iloc[0]).strip()
 
                 quantidade = int(grp.shape[0])
 
-                # valor unitário: mantém a regra original (primeiro registro)
-                valor_unitario = grp.iloc[0][col_custo]
-                try:
-                    valor_unitario_num = float(valor_unitario)
-                except Exception:
-                    valor_unitario_num = valor_unitario  # se vier texto, mantém (vai dar problema no total)
-                valor_total = quantidade * valor_unitario_num if isinstance(valor_unitario_num, (int, float)) else ""
+                # preserva o que você escreve na planilha (pode ser texto ou número original)
+                valor_unitario_original = grp.iloc[0][col_custo]
 
-                if isinstance(valor_total, (int, float)):
+                # total só calcula se unit_num é número válido
+                if pd.notna(unit_num):
+                    valor_total = float(unit_num) * quantidade
                     soma_geral_qtd += quantidade
                     soma_geral_valor += valor_total
+                else:
+                    valor_total = ""
 
                 ws.merge_cells(start_row=linha_atual, start_column=2, end_row=linha_atual, end_column=3)
                 ws[f"B{linha_atual}"] = cidade_display
                 ws[f"D{linha_atual}"] = quantidade
-                ws[f"E{linha_atual}"] = valor_unitario
+                ws[f"E{linha_atual}"] = valor_unitario_original
                 ws[f"F{linha_atual}"] = valor_total
 
                 ws[f"E{linha_atual}"].number_format = formato_contabil
